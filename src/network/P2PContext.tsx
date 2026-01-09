@@ -1,21 +1,21 @@
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
-import Peer, { DataConnection } from 'peerjs';
-import { Client } from 'boardgame.io/client';
-import { JadeNightGame, JadeNightState } from '../game/config';
-import { State } from 'boardgame.io';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
+import { Client } from "boardgame.io/client";
+import { JadeNightGame, JadeNightState } from "../game/config";
+import { State } from "boardgame.io";
 
 interface P2PContextType {
-  peerId: string | null;
+  roomId: string | null;
   isConnected: boolean;
   isHost: boolean;
   gameState: State<JadeNightState> | null;
   hostGame: () => void;
-  joinGame: (hostId: string) => void;
+  joinGame: (roomId: string) => void;
   sendMove: (moveName: string, ...args: any[]) => void;
   playerId: string | null;
   error: string | null;
-  availableRooms: string[];
+  availableRooms: Array<{ roomId: string; playerCount: number; maxPlayers: number }>;
   refreshRooms: () => void;
+  connectedPlayerCount: number;
 }
 
 const P2PContext = createContext<P2PContextType | null>(null);
@@ -23,196 +23,186 @@ const P2PContext = createContext<P2PContextType | null>(null);
 export const useP2P = () => {
   const context = useContext(P2PContext);
   if (!context) {
-    throw new Error('useP2P must be used within a P2PProvider');
+    throw new Error("useP2P must be used within a P2PProvider");
   }
   return context;
 };
 
 export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [peerId, setPeerId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [gameState, setGameState] = useState<State<JadeNightState> | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [availableRooms, setAvailableRooms] = useState<string[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<
+    Array<{ roomId: string; playerCount: number; maxPlayers: number }>
+  >([]);
+  const [connectedPlayerCount, setConnectedPlayerCount] = useState(1);
 
-  const peerRef = useRef<Peer | null>(null);
-  const connRef = useRef<DataConnection | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const gameClientRef = useRef<any>(null);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-      }
-      if (gameClientRef.current) {
-        gameClientRef.current.stop();
-      }
-    };
-  }, []);
+  const getWSUrl = () => {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${hostname}:9000`;
+  };
 
-  // Initialize PeerJS
-  const initPeer = (id?: string) => {
-    // Clean up existing peer if any
-    if (peerRef.current) {
-        peerRef.current.destroy();
+  // Initialize WebSocket connection
+  const initWebSocket = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
     }
 
-    const hostname = window.location.hostname;
-    const options = {
-      host: hostname,
-      port: 9000,
-      path: '/jade-night',
-      debug: 2, // Print warnings and errors
-      config: {
-        iceServers: [] // Disable external STUN servers to force local LAN connection
+    const ws = new WebSocket(getWSUrl());
+
+    ws.onopen = () => {
+      setError(null);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+          case "HOSTED":
+            setConnectedPlayerCount(1);
+            setRoomId(data.roomId);
+            break;
+          case "JOINED":
+            setRoomId(data.roomId);
+            if (data.playerId) {
+              setPlayerId(data.playerId);
+            }
+            if (typeof data.playerCount === "number") {
+              setConnectedPlayerCount(data.playerCount);
+            }
+            setIsConnected(true);
+            break;
+          case "STATE":
+            setGameState(data.state);
+            break;
+          case "MOVE":
+            // Host processes moves
+            // Check if this client is host by checking if gameClientRef is initialized
+            if (gameClientRef.current) {
+              const movePlayerId = data.playerId || "1"; // Default to 1 if not sent (compat)
+              gameClientRef.current.updatePlayerID(movePlayerId);
+              if (gameClientRef.current.moves[data.moveName]) {
+                gameClientRef.current.moves[data.moveName](...data.args);
+              }
+              gameClientRef.current.updatePlayerID("0"); // Restore host ID? Actually host is usually 0.
+            }
+            break;
+          case "PLAYER_JOINED":
+            setConnectedPlayerCount(data.playerCount);
+            setIsConnected(true);
+            break;
+          case "PLAYER_LEFT":
+            setConnectedPlayerCount(data.playerCount);
+            break;
+          case "HOST_DISCONNECTED":
+            setError("Host disconnected");
+            setIsConnected(false);
+            setGameState(null);
+            break;
+          case "ERROR":
+            setError(data.message);
+            break;
+        }
+      } catch (err) {
+        console.error("Error processing message:", err);
       }
     };
-    
-    // Use provided ID or generate a random Guest ID to ensure uniqueness across browsers
-    const userId = id || `Guest-${Math.floor(Math.random() * 1000000).toString(16)}`;
-    const peer = new Peer(userId, options);
-    
-    peer.on('open', (id) => {
-      setPeerId(id);
-      console.log('My peer ID is: ' + id);
-    });
 
-    peer.on('error', (err) => {
-      console.error(err);
-      setError(err.message);
-      if (err.type === 'peer-unavailable') {
-          refreshRooms();
-      }
-    });
+    ws.onerror = () => {
+      setError("WebSocket error");
+    };
 
-    peer.on('disconnected', () => {
-        console.log('Disconnected from signaling server. Reconnecting...');
-        peer.reconnect();
-    });
+    ws.onclose = () => {
+      setIsConnected(false);
+    };
 
-    peerRef.current = peer;
-    return peer;
-  };
+    wsRef.current = ws;
+  }, []);
 
   const refreshRooms = useCallback(async () => {
     try {
       const hostname = window.location.hostname;
-      const response = await fetch(`http://${hostname}:9000/jade-night/peerjs/peers`);
-      if (!response.ok) throw new Error('Failed to fetch peers');
-      const peers = await response.json();
-      // Filter for rooms (starting with JadeRoom-) and exclude self
-      const currentId = peerRef.current?.id;
-      const rooms = peers.filter((id: string) => id.startsWith('JadeRoom-') && id !== currentId);
+      const apiUrl = `http://${hostname}:9000/api/rooms`;
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Failed to fetch rooms");
+      const rooms = await response.json();
       setAvailableRooms(rooms);
     } catch (err) {
       console.error("Error fetching rooms:", err);
-      // Don't set error state here to avoid blocking UI, just log it
     }
   }, []);
 
   const hostGame = () => {
-    const roomId = 'JadeRoom-' + Math.floor(1000 + Math.random() * 9000);
-    const peer = initPeer(roomId);
+    initWebSocket();
+
+    const newRoomId = "JadeRoom-" + Math.floor(1000 + Math.random() * 9000);
     setIsHost(true);
-    setPlayerId('0');
+    setPlayerId("0");
 
-    // Initialize Boardgame.io Client (Master)
-    const client = Client({ game: JadeNightGame });
-    client.start();
-    gameClientRef.current = client;
+    // Wait for WebSocket to be ready
+    const checkConnection = setInterval(() => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        clearInterval(checkConnection);
 
-    // Subscribe to state changes and broadcast to guest
-    client.subscribe((state) => {
-      setGameState(state);
-      if (connRef.current && connRef.current.open) {
-        connRef.current.send({ type: 'STATE', state });
-      }
-    });
+        // Send host game message
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "HOST_GAME",
+            roomId: newRoomId,
+          })
+        );
 
-    // Listen for incoming connections
-    peer.on('connection', (conn) => {
-      console.log('Guest connected');
-      connRef.current = conn;
-      setIsConnected(true);
+        // Initialize Boardgame.io Client (Master) with max players
+        const client = Client({ game: JadeNightGame, numPlayers: 5 });
+        client.start();
+        gameClientRef.current = client;
 
-      conn.on('open', () => {
-        // Send initial state
-        const state = client.getState();
-        conn.send({ type: 'STATE', state });
-      });
-
-      conn.on('data', (data: any) => {
-        if (data.type === 'MOVE') {
-          console.log('Received move from guest:', data);
-          // Execute move on behalf of player 1
-          // We temporarily switch playerID to '1' to execute the move
-          // Note: This requires the game logic to not strictly validate credentials 
-          // or we need a more complex setup. For prototype, this is fine.
-          // However, Client.moves usually uses the configured playerID.
-          // We can manually dispatch the action.
-          
-          // A hacky but effective way for local master:
-          client.updatePlayerID('1');
-          if (client.moves[data.moveName]) {
-             client.moves[data.moveName](...data.args);
+        // Subscribe to state changes and broadcast to guests
+        client.subscribe((state) => {
+          setGameState(state);
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                type: "STATE",
+                state,
+              })
+            );
           }
-          client.updatePlayerID('0');
-        }
-      });
-      
-      conn.on('close', () => {
-          setIsConnected(false);
-          connRef.current = null;
-      });
-    });
+        });
+      }
+    }, 100);
+
+    setTimeout(() => clearInterval(checkConnection), 5000);
   };
 
-  const joinGame = (hostId: string) => {
-    const peer = initPeer();
+  const joinGame = (roomIdToJoin: string) => {
+    initWebSocket();
+
     setIsHost(false);
-    setPlayerId('1');
+    // playerId will be set when JOINED message is received
 
-    peer.on('open', () => {
-        const conn = peer.connect(hostId);
-        connRef.current = conn;
+    const checkConnection = setInterval(() => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        clearInterval(checkConnection);
 
-        conn.on('open', () => {
-            setIsConnected(true);
-            console.log('Connected to host');
-        });
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "JOIN_GAME",
+            roomId: roomIdToJoin,
+          })
+        );
+      }
+    }, 100);
 
-        conn.on('data', (data: any) => {
-            if (data.type === 'STATE') {
-                setGameState(data.state);
-            }
-        });
-        
-        conn.on('close', () => {
-            setIsConnected(false);
-            connRef.current = null;
-        });
-        
-        conn.on('error', (err) => {
-            console.error("Connection error:", err);
-            setError("Connection failed: " + err.message);
-            setIsConnected(false);
-            connRef.current = null;
-        });
-    });
-
-    peer.on('error', (err) => {
-        console.error("Peer error:", err);
-        setError("Peer error: " + err.message);
-        // If negotiation failed, it usually means the other peer is gone
-        if (err.type === 'peer-unavailable') {
-             setError(`Room ${hostId} is no longer available.`);
-             // Optionally refresh rooms to remove it from list
-             refreshRooms();
-        }
-    });
+    setTimeout(() => clearInterval(checkConnection), 5000);
   };
 
   const sendMove = (moveName: string, ...args: any[]) => {
@@ -222,27 +212,48 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         gameClientRef.current.moves[moveName](...args);
       }
     } else {
-      // Send to host
-      if (connRef.current && connRef.current.open) {
-        connRef.current.send({ type: 'MOVE', moveName, args });
+      // Send to host via WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
+          JSON.stringify({
+            type: "MOVE",
+            moveName,
+            args,
+          })
+        );
       }
     }
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (gameClientRef.current) {
+        gameClientRef.current.stop();
+      }
+    };
+  }, []);
+
   return (
-    <P2PContext.Provider value={{ 
-      peerId, 
-      isConnected, 
-      isHost, 
-      gameState, 
-      hostGame, 
-      joinGame, 
-      sendMove,
-      playerId,
-      error,
-      availableRooms,
-      refreshRooms
-    }}>
+    <P2PContext.Provider
+      value={{
+        roomId,
+        isConnected,
+        isHost,
+        gameState,
+        hostGame,
+        joinGame,
+        sendMove,
+        playerId,
+        error,
+        availableRooms,
+        refreshRooms,
+        connectedPlayerCount,
+      }}
+    >
       {children}
     </P2PContext.Provider>
   );

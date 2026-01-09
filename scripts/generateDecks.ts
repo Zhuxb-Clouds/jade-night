@@ -65,7 +65,8 @@ function generateDecks() {
 
   // 1. Generate Snacks
   // Level 1: Basic (1 Color, 1 Shape, 1 Temp) - 18 Types
-  for (let r = 0; r < 2; r++) { // 2 copies -> 36 cards
+  for (let r = 0; r < 3; r++) {
+    // 3 copies -> 54 cards
     for (const c of colors) {
       for (const s of shapes) {
         for (const t of temps) {
@@ -156,18 +157,21 @@ function generateDecks() {
     }
   }
 
-  // 2. Generate Plates - Level 1: Common (18 cards)
-  for (const c of colors) {
-    for (const s of shapes) {
-      for (const t of temps) {
-        tablewareDeck.push({
-          id: `plate-L1-${idCounter++}`,
-          type: "Tableware",
-          name: PLATE_NAMES.L1,
-          attributes: { colors: [c], shapes: [s], temps: [t] },
-          level: 1,
-          description: "基础食器",
-        });
+  // 2. Generate Plates - Level 1: Common (54 cards = 3x18)
+  for (let r = 0; r < 3; r++) {
+    // 3 copies
+    for (const c of colors) {
+      for (const s of shapes) {
+        for (const t of temps) {
+          tablewareDeck.push({
+            id: `plate-L1-${idCounter++}`,
+            type: "Tableware",
+            name: PLATE_NAMES.L1,
+            attributes: { colors: [c], shapes: [s], temps: [t] },
+            level: 1,
+            description: "基础食器",
+          });
+        }
       }
     }
   }

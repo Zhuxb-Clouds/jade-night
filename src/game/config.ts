@@ -53,6 +53,7 @@ export interface PlayerState {
   personalArea: WaitingItem[];
   offeringArea: WaitingItem[];
   actionPoints: number;
+  bonusSnackFromJade?: boolean; // Free one-time snack pickup after gaining Jade Chalice
 }
 
 export interface NotificationState {
@@ -112,13 +113,13 @@ const calculatePairingScore = (item: WaitingItem): number => {
 };
 
 const calculateFinalScore = (player: PlayerState) => {
-  // S = Sum(P_ind) + P_off + C_off - C_wait
+  // S = Sum(P_ind) + Sum(P_off) + C_off - C_wait
 
-  // 1. Personal Area Scores
+  // 1. Personal Area Scores (pairing scores)
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
-  // 2. Offering Area Scores
-  const sumP_off = player.offeringArea.length;
+  // 2. Offering Area Scores (pairing scores too)
+  const sumP_off = player.offeringArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
   // 3. Offering Count Bonus (C_off)
   const c_off = player.offeringArea.length;
@@ -152,6 +153,7 @@ export const JadeNightGame: Game<JadeNightState> = {
         personalArea: [],
         offeringArea: [],
         actionPoints: 0,
+        bonusSnackFromJade: false,
       };
     }
 
@@ -173,6 +175,18 @@ export const JadeNightGame: Game<JadeNightState> = {
   },
 
   turn: {
+    order: {
+      // Custom turn order that only cycles through existing players
+      first: () => 0,
+      next: ({ G, ctx }) => {
+        const playerIds = Object.keys(G.players)
+          .map(Number)
+          .sort((a, b) => a - b);
+        const currentIndex = playerIds.indexOf(Number(ctx.currentPlayer));
+        const nextIndex = (currentIndex + 1) % playerIds.length;
+        return playerIds[nextIndex];
+      },
+    },
     onBegin: ({ G, ctx }) => {
       const player = G.players[ctx.currentPlayer];
       if (player) {
@@ -184,7 +198,8 @@ export const JadeNightGame: Game<JadeNightState> = {
   },
 
   endIf: ({ G, ctx }) => {
-    const numPlayers = ctx.numPlayers || Object.keys(G.players).length || 2;
+    // Prefer G.players length as we dynamically adjust it
+    const numPlayers = Object.keys(G.players).length || ctx.numPlayers || 2;
     const { endThreshold } = getGameThresholds(numPlayers);
 
     const totalOfferings = Object.values(G.players).reduce(
@@ -231,10 +246,27 @@ export const JadeNightGame: Game<JadeNightState> = {
   },
 
   moves: {
-    startGame: ({ G, random, playerID }) => {
+    // Manual end turn
+    endTurn: ({ events }) => {
+      events.endTurn();
+    },
+
+    startGame: ({ G, random, playerID }, actualPlayerCount?: number) => {
       // Only host (player 0) can start
       if (playerID !== "0") return INVALID_MOVE;
       if (G.isGameStarted) return INVALID_MOVE;
+
+      // Adjust players if count provided
+      if (actualPlayerCount && actualPlayerCount >= 2 && actualPlayerCount <= 5) {
+        // Remove players > count-1 (since 0-indexed)
+        // e.g. Count=3 (0,1,2). Remove 3,4.
+        const allIds = Object.keys(G.players).sort();
+        allIds.forEach((pid) => {
+          if (parseInt(pid) >= actualPlayerCount) {
+            delete G.players[pid];
+          }
+        });
+      }
 
       // Shuffle all decks
       G.snackDeck = random.Shuffle(G.snackDeck);
@@ -276,8 +308,6 @@ export const JadeNightGame: Game<JadeNightState> = {
       const pid = playerID || "0";
       const player = G.players[pid];
 
-      if (player.actionPoints <= 0) return INVALID_MOVE;
-
       // Find card in public area
       const slotIndex = G.publicArea.findIndex(
         (s) => s.tableware?.id === cardId || s.snack?.id === cardId
@@ -301,6 +331,10 @@ export const JadeNightGame: Game<JadeNightState> = {
       }
 
       if (!card) return INVALID_MOVE;
+
+      const isFreeSnack = isSnack && player.bonusSnackFromJade === true;
+
+      if (!isFreeSnack && player.actionPoints <= 0) return INVALID_MOVE;
 
       // Logic for placing card
       if (targetSlotId) {
@@ -338,17 +372,57 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       // Refresh slot if empty
       if (!slot.snack && !slot.tableware) {
-        if (G.tablewareDeck.length > 0) slot.tableware = G.tablewareDeck.shift();
-        if (G.snackDeck.length > 0) slot.snack = G.snackDeck.shift();
+        if (G.tablewareDeck.length > 0) {
+          slot.tableware = G.tablewareDeck.shift();
+        }
+        // Only add snack if there's a plate to put it on
+        if (slot.tableware && G.snackDeck.length > 0) {
+          slot.snack = G.snackDeck.shift();
+        }
       }
 
-      // Deduct AP
-      player.actionPoints -= 1;
+      if (isFreeSnack) {
+        player.bonusSnackFromJade = false;
+      } else {
+        // Deduct AP
+        player.actionPoints -= 1;
+      }
 
-      // End turn if AP is 0
-      if (player.actionPoints <= 0) {
+      // End turn if no AP and no pending jade snack
+      if (player.actionPoints <= 0 && !player.bonusSnackFromJade) {
         events.endTurn();
       }
+    },
+
+    // Jade Chalice bonus: take a snack from any waiting area (not personal/offering) without spending AP
+    takeJadeSnackFromWaiting: (
+      { G, playerID, events },
+      {
+        sourcePlayerId,
+        sourceSlotId,
+        targetSlotId,
+      }: { sourcePlayerId: string; sourceSlotId: string; targetSlotId: string }
+    ) => {
+      const pid = playerID || "0";
+      const player = G.players[pid];
+      if (!player || !player.bonusSnackFromJade) return INVALID_MOVE;
+
+      const targetSlot = player.waitingArea.find((s) => s.id === targetSlotId);
+      if (!targetSlot || !targetSlot.tableware || targetSlot.snack) return INVALID_MOVE;
+
+      const owner = G.players[sourcePlayerId];
+      if (!owner) return INVALID_MOVE;
+      const sourceSlot = owner.waitingArea.find((s) => s.id === sourceSlotId);
+      if (!sourceSlot || !sourceSlot.snack) return INVALID_MOVE;
+
+      const snackCard = sourceSlot.snack;
+      sourceSlot.snack = undefined;
+      targetSlot.snack = snackCard;
+
+      // Consume bonus
+      player.bonusSnackFromJade = false;
+
+      if (player.actionPoints <= 0) events.endTurn();
     },
 
     taste: ({ G, playerID, events }, { slotId }: { slotId: string }) => {
@@ -467,7 +541,9 @@ export const JadeNightGame: Game<JadeNightState> = {
             snack: undefined,
           });
 
-          rewardMessage = "判定成功！获得【玉盏】！";
+          player.bonusSnackFromJade = true;
+
+          rewardMessage = "判定成功！获得【玉盏】！可立即免费从任意等待区或公共区拿取一份点心。";
           grantStandardReward = false; // Jade replaces standard reward
         } else {
           rewardMessage = "判定未通过。";
@@ -508,7 +584,7 @@ export const JadeNightGame: Game<JadeNightState> = {
         timestamp: Date.now(),
       };
 
-      if (player.actionPoints <= 0) events.endTurn();
+      if (player.actionPoints <= 0 && !player.bonusSnackFromJade) events.endTurn();
     },
   },
 };
