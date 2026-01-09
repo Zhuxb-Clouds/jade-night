@@ -32,7 +32,7 @@ export interface Card {
   type: CardType;
   name: string;
   attributes: CardAttributes;
-  level: number; // 0: Snack, 1: Common, 2: Rare, 3: Epic, 4: Jade
+  level: number; // 1-3 for Snacks and Tableware (higher is better)
   description?: string;
 }
 
@@ -102,6 +102,11 @@ const calculatePairingScore = (item: WaitingItem): number => {
   if (p.shapes.some((sh) => s.shapes.includes(sh))) score += 1;
   // Temp Match
   if (p.temps.some((t) => s.temps.includes(t))) score += 1;
+
+  // Level Bonus (Higher level snack = more points)
+  if (item.snack.level) {
+    score += item.snack.level;
+  }
 
   return score;
 };

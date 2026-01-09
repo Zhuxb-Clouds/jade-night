@@ -63,22 +63,96 @@ function generateDecks() {
   const shapes = Object.values(CardShape);
   const temps = Object.values(CardTemp);
 
-  // 1. Generate Snacks: 3 x 3 x 2 x 3 = 54
-  for (let r = 0; r < 3; r++) {
+  // 1. Generate Snacks
+  // Level 1: Basic (1 Color, 1 Shape, 1 Temp) - 18 Types
+  for (let r = 0; r < 2; r++) { // 2 copies -> 36 cards
     for (const c of colors) {
       for (const s of shapes) {
         for (const t of temps) {
           const key = `${c}-${s}-${t}`;
           const name = SNACK_NAMES[key] || `${c} ${s} ${t} 点心`;
           snackDeck.push({
-            id: `snack-${idCounter++}`,
+            id: `snack-L1-${idCounter++}`,
             type: "Snack",
             name: name,
             attributes: { colors: [c], shapes: [s], temps: [t] },
-            level: 0,
+            level: 1,
+            description: "精致点心",
           });
         }
       }
+    }
+  }
+
+  // Level 2: Advanced (Dual Color OR Dual Shape) - 1 Temp (Mutex Rule)
+  // Dual Colors (3 combos) x 3 Shapes x 2 Temps = 18 cards
+  const snack_l2_colors: CardColor[][] = [
+    [CardColor.RED, CardColor.GREEN],
+    [CardColor.GREEN, CardColor.YELLOW],
+    [CardColor.YELLOW, CardColor.RED],
+  ];
+  for (const colorPair of snack_l2_colors) {
+    for (const s of shapes) {
+      for (const t of temps) {
+        snackDeck.push({
+          id: `snack-L2-C-${idCounter++}`,
+          type: "Snack",
+          name: "双色点心",
+          attributes: { colors: colorPair, shapes: [s], temps: [t] },
+          level: 2,
+          description: "双色风味",
+        });
+      }
+    }
+  }
+
+  // Dual Shapes (3 combos) x 3 Colors x 2 Temps = 18 cards
+  const snack_l2_shapes: CardShape[][] = [
+    [CardShape.CIRCLE, CardShape.SQUARE],
+    [CardShape.SQUARE, CardShape.FLOWER],
+    [CardShape.FLOWER, CardShape.CIRCLE],
+  ];
+  for (const shapePair of snack_l2_shapes) {
+    for (const c of colors) {
+      for (const t of temps) {
+        snackDeck.push({
+          id: `snack-L2-S-${idCounter++}`,
+          type: "Snack",
+          name: "双形点心",
+          attributes: { colors: [c], shapes: shapePair, temps: [t] },
+          level: 2,
+          description: "精美造型",
+        });
+      }
+    }
+  }
+
+  // Level 3: Master (Triple Color OR Triple Shape) - 1 Temp
+  // All Colors (1 combo) x 3 Shapes x 2 Temps = 6 cards
+  for (const s of shapes) {
+    for (const t of temps) {
+      snackDeck.push({
+        id: `snack-L3-C-${idCounter++}`,
+        type: "Snack",
+        name: "三色锦绣",
+        attributes: { colors: Object.values(CardColor), shapes: [s], temps: [t] },
+        level: 3,
+        description: "集三色之精华",
+      });
+    }
+  }
+
+  // All Shapes (1 combo) x 3 Colors x 2 Temps = 6 cards
+  for (const c of colors) {
+    for (const t of temps) {
+      snackDeck.push({
+        id: `snack-L3-S-${idCounter++}`,
+        type: "Snack",
+        name: "千层百态",
+        attributes: { colors: [c], shapes: Object.values(CardShape), temps: [t] },
+        level: 3,
+        description: "技艺登峰造极",
+      });
     }
   }
 
