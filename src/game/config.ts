@@ -66,11 +66,11 @@ export interface NotificationState {
   timestamp: number;
 }
 
-// L3奉献时的选择状态
-export interface L3ChoicePending {
-  playerId: string;
-  slotId: string; // 被奉献的物品ID（已移入奉献区）
-}
+// L3奉献时的选择状态 - 不再需要，改为敬茶机制
+// export interface L3ChoicePending {
+//   playerId: string;
+//   slotId: string;
+// }
 
 export interface JadeNightState {
   snackDeck: Card[];
@@ -80,7 +80,7 @@ export interface JadeNightState {
   players: { [key: string]: PlayerState };
   isGameStarted: boolean;
   notification: NotificationState | null;
-  l3ChoicePending: L3ChoicePending | null; // L3奉献等待玩家选择
+  jadeGiven: boolean; // 玉盏是否已被发放
 }
 
 // --- Helpers ---
@@ -109,17 +109,17 @@ const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
   const s = snack.attributes;
 
   let score = 0;
-  
+
   // Color Match: 每个被点心填满的颜色圈得1分
   for (const c of p.colors) {
     if (s.colors.includes(c)) score += 1;
   }
-  
+
   // Shape Match: 每个被点心填满的形状圈得1分
   for (const sh of p.shapes) {
     if (s.shapes.includes(sh)) score += 1;
   }
-  
+
   // Temp Match: 每个被点心填满的温度圈得1分
   for (const t of p.temps) {
     if (s.temps.includes(t)) score += 1;
@@ -155,24 +155,25 @@ const calculatePairingScore = (item: WaitingItem): number => {
 };
 
 const calculateFinalScore = (player: PlayerState) => {
-  // S = Sum(P_ind) + Sum(P_off) - C_wait * 2
+  // S = Sum(P_ind) + C_off - C_wait * 2
+  // 文档公式：个人区配对分 + 奉献区数量 - 滞留惩罚
 
   // 1. Personal Area Scores (pairing scores)
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
-  // 2. Offering Area Scores (pairing scores too)
-  const sumP_off = player.offeringArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
+  // 2. Offering Area Count (只计数量，不计配对分)
+  const c_off = player.offeringArea.length;
 
   // 3. Waiting Area Penalty (C_wait) - 只计算有点心的盘子
-  const c_wait = player.waitingArea.filter(item => {
+  const c_wait = player.waitingArea.filter((item) => {
     const isJadeChalice = item.tableware?.name === "玉盏";
-    return isJadeChalice ? (item.snacks && item.snacks.length > 0) : !!item.snack;
+    return isJadeChalice ? item.snacks && item.snacks.length > 0 : !!item.snack;
   }).length;
 
-  // 公式: S = Sum(P_ind) + Sum(P_off) - C_wait * 2
-  const totalScore = sumP_ind + sumP_off - c_wait * 2;
+  // 公式: S = Sum(P_ind) + C_off - C_wait * 2
+  const totalScore = sumP_ind + c_off - c_wait * 2;
 
-  return { totalScore, sumP_ind, sumP_off, c_wait };
+  return { totalScore, sumP_ind, c_off, c_wait };
 };
 
 export const JadeNightGame: Game<JadeNightState> = {
@@ -202,9 +203,9 @@ export const JadeNightGame: Game<JadeNightState> = {
       };
     }
 
-    // Initialize 8 public slots
+    // Initialize 5 public slots (文档规定5个槽位)
     const publicArea: PublicSlot[] = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 5; i++) {
       publicArea.push({ id: `public-slot-${i}` });
     }
 
@@ -216,7 +217,7 @@ export const JadeNightGame: Game<JadeNightState> = {
       players,
       isGameStarted: false,
       notification: null,
-      l3ChoicePending: null,
+      jadeGiven: false,
     };
   },
 
@@ -245,13 +246,8 @@ export const JadeNightGame: Game<JadeNightState> = {
   },
 
   endIf: ({ G, ctx }) => {
-    // Check if Jade Chalice has been distributed
-    const jadeDistributed = Object.values(G.players).some(
-      (p) =>
-        p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
-        p.personalArea.some((w) => w.tableware?.name === "玉盏") ||
-        p.offeringArea.some((w) => w.tableware?.name === "玉盏")
-    );
+    // 使用 jadeGiven 标志检查玉盏是否已发放
+    const jadeDistributed = G.jadeGiven;
 
     // Check if all L3 plates have been distributed (none left in reward deck)
     const l3PlatesRemaining = G.rewardDeck.filter((c) => c.level === 3).length;
@@ -507,12 +503,9 @@ export const JadeNightGame: Game<JadeNightState> = {
       if (player.actionPoints <= 0) events.endTurn();
     },
 
-    offer: ({ G, ctx, events, random }, { slotId }: { slotId: string }) => {
+    offer: ({ G, ctx, events }, { slotId }: { slotId: string }) => {
       const player = G.players[ctx.currentPlayer];
       if (player.actionPoints <= 0) return INVALID_MOVE;
-
-      // 如果有未完成的L3选择，不允许进行新的奉献
-      if (G.l3ChoicePending) return INVALID_MOVE;
 
       const slotIndex = player.waitingArea.findIndex((s) => s.id === slotId);
       if (slotIndex === -1) return INVALID_MOVE;
@@ -524,131 +517,32 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       if (!item.tableware || !hasSnack) return INVALID_MOVE;
 
-      // 奉献不需要温度匹配限制
+      // 文档规定：奉献的点心的配对分至少要>=1点
+      const pairingScore = calculatePairingScore(item);
+      if (pairingScore < 1) return INVALID_MOVE;
 
       const currentLevel = item.tableware.level;
 
       // Move to offering area
-      const offeredItemId = item.id;
       player.offeringArea.push(item);
       player.waitingArea.splice(slotIndex, 1);
 
       player.actionPoints -= 1;
 
-      // 检查是否是L3奉献 - 需要玩家选择
-      if (currentLevel === 3) {
-        // 检查玉盏是否已经发放
-        const jadeAlreadyGiven = Object.values(G.players).some(
-          (p) =>
-            p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
-            p.personalArea.some((w) => w.tableware?.name === "玉盏") ||
-            p.offeringArea.some((w) => w.tableware?.name === "玉盏")
-        );
-
-        if (jadeAlreadyGiven) {
-          // 玉盏已发放，L3奉献只能获得2茶券
-          player.teaTokens += 2;
-          G.notification = {
-            type: "offering",
-            message: "奉献珍宝盘！玉盏已被获取，获得 2枚茶券。",
-            details: null,
-            timestamp: Date.now(),
-          };
-          if (player.actionPoints <= 0) events.endTurn();
-        } else {
-          // 玉盏未发放，设置等待选择状态
-          G.l3ChoicePending = {
-            playerId: ctx.currentPlayer,
-            slotId: offeredItemId,
-          };
-          G.notification = {
-            type: "info",
-            message: "奉献珍宝盘！请选择奖励：稳健赏赐(2茶券) 或 博取玉盏(骰子判定)",
-            details: null,
-            timestamp: Date.now(),
-          };
-          // 不结束回合，等待选择
-        }
-        return;
-      }
-
-      // --- 非L3奉献的常规奖励逻辑 ---
-      const totalOfferings = Object.values(G.players).reduce(
-        (sum, p) => sum + p.offeringArea.length,
-        0
-      );
-
       let rewardMessage = "";
-      let jadeResult = null;
-      let grantStandardReward = true;
 
-      // 1. Jade Chalice Judgement
-      // Trigger every time total offerings reaches a multiple of 5 (5, 10, 15...)
-      // Only if Jade Chalice hasn't been given yet
-      const jadeAlreadyGiven = Object.values(G.players).some(
-        (p) =>
-          p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
-          p.personalArea.some((w) => w.tableware?.name === "玉盏") ||
-          p.offeringArea.some((w) => w.tableware?.name === "玉盏")
-      );
-
-      // Check if this offering triggers a jade judgment (every 5 offerings)
-      const triggersJadeJudgment = totalOfferings > 0 && totalOfferings % 5 === 0;
-
-      if (triggersJadeJudgment && !jadeAlreadyGiven) {
-        // Roll 2d6 + C_off >= 12 to succeed (C_off = player's offering count)
-        const p_offerings = player.offeringArea.length;
-
-        const d1 = random.D6();
-        const d2 = random.D6();
-        const baseRoll = d1 + d2;
-        const modifiedRoll = baseRoll + p_offerings;
-        const success = modifiedRoll >= 12;
-
-        jadeResult = {
-          targetScore: 12,
-          baseRoll: baseRoll,
-          modifier: p_offerings,
-          modifiedRoll: modifiedRoll,
-          dice: [d1, d2],
-          success,
-        };
-
-        if (success) {
-          // Grant Jade Chalice
-          const jadeChalice: Card = {
-            id: `jade-chalice-${Date.now()}`,
-            type: "Tableware",
-            name: "玉盏",
-            attributes: {
-              colors: Object.values(CardColor),
-              shapes: Object.values(CardShape),
-              temps: Object.values(CardTemp),
-            },
-            level: 4, // Legendary
-            description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
-          };
-
-          player.waitingArea.push({
-            id: `jade-card-${Date.now()}`,
-            tableware: jadeChalice,
-            snack: undefined,
-            snacks: [],
-          });
-
-          rewardMessage = "判定成功！获得【玉盏】！可在其上堆叠三盘点心。";
-          grantStandardReward = false;
-        } else {
-          rewardMessage = "判定未通过。";
-          grantStandardReward = true;
-        }
+      // 文档规定：若奉献的点心配对分>=2点，则额外获得一枚茶券
+      if (pairingScore >= 2) {
+        player.teaTokens += 1;
+        rewardMessage += "配对分≥2，额外获得1枚茶券！";
       }
 
-      // 2. Regular Upgrade (Standard Reward)
-      if (grantStandardReward) {
-        const targetLevel = currentLevel + 1;
-        const rewardIndex = G.rewardDeck.findIndex((c) => c.level === targetLevel);
-
+      // 奖励逻辑：根据食器等级获得升级
+      // L1 -> 获得 L2
+      // L2 -> 获得 L3
+      // L3 -> 获得两个茶券
+      if (currentLevel === 1) {
+        const rewardIndex = G.rewardDeck.findIndex((c) => c.level === 2);
         if (rewardIndex !== -1) {
           const rewardPlate = G.rewardDeck.splice(rewardIndex, 1)[0];
           player.waitingArea.push({
@@ -656,99 +550,85 @@ export const JadeNightGame: Game<JadeNightState> = {
             tableware: rewardPlate,
             snack: undefined,
           });
-          rewardMessage += ` 获得升级食盘 (L${targetLevel})。`;
+          rewardMessage += ` 获得升级食器 (L2)。`;
         } else {
-          if (currentLevel < 3) rewardMessage += ` 牌堆无L${targetLevel}食盘。`;
-          else rewardMessage += ` 已达最高等级。`;
+          rewardMessage += ` 牌堆无L2食器可领取。`;
         }
+      } else if (currentLevel === 2) {
+        const rewardIndex = G.rewardDeck.findIndex((c) => c.level === 3);
+        if (rewardIndex !== -1) {
+          const rewardPlate = G.rewardDeck.splice(rewardIndex, 1)[0];
+          player.waitingArea.push({
+            id: `reward-plate-${Date.now()}`,
+            tableware: rewardPlate,
+            snack: undefined,
+          });
+          rewardMessage += ` 获得升级食器 (L3)。`;
+        } else {
+          rewardMessage += ` 牌堆无L3食器可领取。`;
+        }
+      } else if (currentLevel === 3) {
+        // L3奉献获得2茶券
+        player.teaTokens += 2;
+        rewardMessage += ` 奉献珍宝盘，获得2枚茶券。`;
       }
 
       G.notification = {
         type: "offering",
-        message: rewardMessage,
-        details: jadeResult,
+        message: rewardMessage || "奉献成功！",
+        details: { pairingScore },
         timestamp: Date.now(),
       };
 
       if (player.actionPoints <= 0) events.endTurn();
     },
 
-    // L3奉献选择：稳健赏赐（获得2茶券）
-    l3ChooseTeaTokens: ({ G, ctx, events }) => {
-      if (!G.l3ChoicePending) return INVALID_MOVE;
-      if (G.l3ChoicePending.playerId !== ctx.currentPlayer) return INVALID_MOVE;
-
+    // 敬茶：获取玉盏的唯一方式
+    // 条件：1. 奉献区拥有至少4个盘子 2. 消耗3枚茶券
+    serveTea: ({ G, ctx, events }) => {
       const player = G.players[ctx.currentPlayer];
-      player.teaTokens += 2;
+      if (player.actionPoints <= 0) return INVALID_MOVE;
 
-      G.l3ChoicePending = null;
+      // 检查玉盏是否已被发放
+      if (G.jadeGiven) return INVALID_MOVE;
+
+      // 检查资历门槛：奉献区至少4个盘子
+      if (player.offeringArea.length < 4) return INVALID_MOVE;
+
+      // 检查茶券：需要3枚
+      if (player.teaTokens < 3) return INVALID_MOVE;
+
+      // 消耗茶券
+      player.teaTokens -= 3;
+      player.actionPoints -= 1;
+
+      // 发放玉盏
+      const jadeChalice: Card = {
+        id: `jade-chalice-${Date.now()}`,
+        type: "Tableware",
+        name: "玉盏",
+        attributes: {
+          colors: Object.values(CardColor),
+          shapes: Object.values(CardShape),
+          temps: Object.values(CardTemp),
+        },
+        level: 4, // Legendary
+        description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
+      };
+
+      player.waitingArea.push({
+        id: `jade-card-${Date.now()}`,
+        tableware: jadeChalice,
+        snack: undefined,
+        snacks: [],
+      });
+
+      G.jadeGiven = true;
+
       G.notification = {
         type: "offering",
-        message: "选择稳健赏赐！获得 2枚茶券。",
+        message: "敬茶成功！获得【玉盏】！可在其上堆叠三盘点心。",
         details: null,
-        timestamp: Date.now(),
-      };
-
-      if (player.actionPoints <= 0) events.endTurn();
-    },
-
-    // L3奉献选择：博取玉盏（进行骰子判定）
-    l3ChooseJadeRoll: ({ G, ctx, events, random }) => {
-      if (!G.l3ChoicePending) return INVALID_MOVE;
-      if (G.l3ChoicePending.playerId !== ctx.currentPlayer) return INVALID_MOVE;
-
-      const player = G.players[ctx.currentPlayer];
-      const p_offerings = player.offeringArea.length;
-
-      const d1 = random.D6();
-      const d2 = random.D6();
-      const baseRoll = d1 + d2;
-      const modifiedRoll = baseRoll + p_offerings;
-      const success = modifiedRoll >= 12;
-
-      const jadeResult = {
-        targetScore: 12,
-        baseRoll: baseRoll,
-        modifier: p_offerings,
-        modifiedRoll: modifiedRoll,
-        dice: [d1, d2],
-        success,
-      };
-
-      let rewardMessage = "";
-
-      if (success) {
-        // Grant Jade Chalice
-        const jadeChalice: Card = {
-          id: `jade-chalice-${Date.now()}`,
-          type: "Tableware",
-          name: "玉盏",
-          attributes: {
-            colors: Object.values(CardColor),
-            shapes: Object.values(CardShape),
-            temps: Object.values(CardTemp),
-          },
-          level: 4,
-          description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
-        };
-
-        player.waitingArea.push({
-          id: `jade-card-${Date.now()}`,
-          tableware: jadeChalice,
-          snack: undefined,
-          snacks: [],
-        });
-
-        rewardMessage = "博取玉盏成功！获得【玉盏】！";
-      } else {
-        rewardMessage = "博取玉盏失败，判定未通过。";
-      }
-
-      G.l3ChoicePending = null;
-      G.notification = {
-        type: "offering",
-        message: rewardMessage,
-        details: jadeResult,
         timestamp: Date.now(),
       };
 

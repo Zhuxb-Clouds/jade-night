@@ -42,7 +42,7 @@ interface Card {
 }
 
 const SNACK_NAMES: Record<string, string> = {
-  // 基础点心 (54张)
+  // 基础点心 (36张: 3色 x 3形 x 2温 x 2重复)
   "red-circle-warm": "玫瑰赤豆糕",
   "red-circle-cold": "冰镇樱桃冻",
   "red-square-warm": "红枣方糕",
@@ -61,14 +61,18 @@ const SNACK_NAMES: Record<string, string> = {
   "yellow-square-cold": "芒果冰糕",
   "yellow-flower-warm": "金桂海棠酥",
   "yellow-flower-cold": "菊花冻",
-  // 稀有珍馐 - 双色系 (3张)
+  // 稀有珍馐 - 双色系 (6张，每种2张)
   "twin-red-green": "鸳鸯双色卷",
   "twin-red-yellow": "金玉满堂糕",
   "twin-green-yellow": "翡翠金丝饼",
-  // 稀有珍馐 - 双形系 (3张)
+  // 稀有珍馐 - 双形系 (6张，每种2张)
   "twin-circle-square": "乾坤方圆盒",
   "twin-circle-flower": "花好月圆饼",
   "twin-square-flower": "锦绣攒盒",
+  // 顶级点心 - Epic (6张)
+  "epic-twin-color-twin-shape": "锦绣鸳鸯盒",
+  "epic-triple-color": "三彩琉璃糕",
+  "epic-triple-shape": "百花攒盒",
 };
 
 const PLATE_NAMES = {
@@ -87,11 +91,11 @@ function generateDecks() {
   const shapes = Object.values(CardShape);
   const temps = Object.values(CardTemp);
 
-  // ========== 点心牌生成 (60张 = 54基础 + 6稀有) ==========
+  // ========== 点心牌生成 (54张 = 36基础 + 12稀有 + 6顶级) ==========
 
-  // 1. 基础点心 (54张): 3色 x 3形 x 2温 x 3张
-  for (let r = 0; r < 3; r++) {
-    // 3 copies -> 54 cards
+  // 1. 基础点心 (36张): 3色 x 3形 x 2温 x 2张
+  for (let r = 0; r < 2; r++) {
+    // 2 copies -> 36 cards
     for (const c of colors) {
       for (const s of shapes) {
         for (const t of temps) {
@@ -110,7 +114,7 @@ function generateDecks() {
     }
   }
 
-  // 2. 稀有珍馐 - 双色系 (3张)
+  // 2. 稀有珍馐 - 双色系 (6张，每种2张)
   // 双色点心拥有两种颜色，但形状和温度各只有一个（随机分配）
   const twinColors: [CardColor, CardColor, string][] = [
     [CardColor.RED, CardColor.GREEN, "twin-red-green"],
@@ -119,20 +123,22 @@ function generateDecks() {
   ];
 
   twinColors.forEach(([c1, c2, key], idx) => {
-    // 随机分配形状和温度（使用固定模式保证平衡）
-    const shape = shapes[idx % 3];
-    const temp = temps[idx % 2];
-    snackDeck.push({
-      id: `snack-twin-color-${idCounter++}`,
-      type: "Snack",
-      name: SNACK_NAMES[key] || "双色珍馐",
-      attributes: { colors: [c1, c2], shapes: [shape], temps: [temp] },
-      level: 2, // 稀有等级
-      description: "双色风味，一口尽享两种色彩",
-    });
+    // 每种双色点心2张
+    for (let r = 0; r < 2; r++) {
+      const shape = shapes[(idx + r) % 3];
+      const temp = temps[(idx + r) % 2];
+      snackDeck.push({
+        id: `snack-twin-color-${idCounter++}`,
+        type: "Snack",
+        name: SNACK_NAMES[key] || "双色珍馐",
+        attributes: { colors: [c1, c2], shapes: [shape], temps: [temp] },
+        level: 2, // 稀有等级
+        description: "双色风味，一口尽享两种色彩",
+      });
+    }
   });
 
-  // 3. 稀有珍馐 - 双形系 (3张)
+  // 3. 稀有珍馐 - 双形系 (6张，每种2张)
   // 双形点心拥有两种形状，但颜色和温度各只有一个（随机分配）
   const twinShapes: [CardShape, CardShape, string][] = [
     [CardShape.CIRCLE, CardShape.SQUARE, "twin-circle-square"],
@@ -141,23 +147,74 @@ function generateDecks() {
   ];
 
   twinShapes.forEach(([s1, s2, key], idx) => {
-    // 随机分配颜色和温度（使用固定模式保证平衡）
-    const color = colors[idx % 3];
-    const temp = temps[(idx + 1) % 2]; // 错开以平衡冷暖
-    snackDeck.push({
-      id: `snack-twin-shape-${idCounter++}`,
-      type: "Snack",
-      name: SNACK_NAMES[key] || "双形珍馐",
-      attributes: { colors: [color], shapes: [s1, s2], temps: [temp] },
-      level: 2, // 稀有等级
-      description: "双形造型，精美绝伦",
-    });
+    // 每种双形点心2张
+    for (let r = 0; r < 2; r++) {
+      const color = colors[(idx + r) % 3];
+      const temp = temps[(idx + r + 1) % 2]; // 错开以平衡冷暖
+      snackDeck.push({
+        id: `snack-twin-shape-${idCounter++}`,
+        type: "Snack",
+        name: SNACK_NAMES[key] || "双形珍馐",
+        attributes: { colors: [color], shapes: [s1, s2], temps: [temp] },
+        level: 2, // 稀有等级
+        description: "双形造型，精美绝伦",
+      });
+    }
   });
 
-  // ========== 食器牌生成 (36张 = 18 L1 + 12 L2 + 6 L3) ==========
+  // 4. 顶级点心 Epic (6张)
+  // 双色双形 (2张)
+  for (let i = 0; i < 2; i++) {
+    snackDeck.push({
+      id: `snack-epic-twin-twin-${idCounter++}`,
+      type: "Snack",
+      name: SNACK_NAMES["epic-twin-color-twin-shape"] || "锦绣鸳鸯盒",
+      attributes: {
+        colors: [colors[i % 3], colors[(i + 1) % 3]],
+        shapes: [shapes[i % 3], shapes[(i + 1) % 3]],
+        temps: [temps[i % 2]],
+      },
+      level: 3,
+      description: "双色双形，精美绝伦",
+    });
+  }
 
-  // Level 1: 普通盘 (18张) - 单属性严格限制
-  // 3色 x 3形 x 2温 = 18张，每种只有1张
+  // 三色 (2张)
+  for (let i = 0; i < 2; i++) {
+    snackDeck.push({
+      id: `snack-epic-triple-color-${idCounter++}`,
+      type: "Snack",
+      name: SNACK_NAMES["epic-triple-color"] || "三彩琉璃糕",
+      attributes: {
+        colors: Object.values(CardColor),
+        shapes: [shapes[i % 3]],
+        temps: [temps[i % 2]],
+      },
+      level: 3,
+      description: "三色绚烂，极致华美",
+    });
+  }
+
+  // 三形 (2张)
+  for (let i = 0; i < 2; i++) {
+    snackDeck.push({
+      id: `snack-epic-triple-shape-${idCounter++}`,
+      type: "Snack",
+      name: SNACK_NAMES["epic-triple-shape"] || "百花攒盒",
+      attributes: {
+        colors: [colors[i % 3]],
+        shapes: Object.values(CardShape),
+        temps: [temps[i % 2]],
+      },
+      level: 3,
+      description: "三形荟萃，工艺精湛",
+    });
+  }
+
+  // ========== 食器牌生成 (42张 = 20 L1 + 16 L2 + 6 L3) ==========
+
+  // Level 1: 普通盘 (20张) - 单属性严格限制
+  // 需要20张，而3x3x2=18，所以增加2张额外的
   for (const c of colors) {
     for (const s of shapes) {
       for (const t of temps) {
@@ -172,16 +229,33 @@ function generateDecks() {
       }
     }
   }
+  // 额外2张L1盘子（随机属性组合）
+  tablewareDeck.push({
+    id: `plate-L1-extra-${idCounter++}`,
+    type: "Tableware",
+    name: PLATE_NAMES.L1,
+    attributes: { colors: [CardColor.RED], shapes: [CardShape.CIRCLE], temps: [CardTemp.WARM] },
+    level: 1,
+    description: "基础食器",
+  });
+  tablewareDeck.push({
+    id: `plate-L1-extra-${idCounter++}`,
+    type: "Tableware",
+    name: PLATE_NAMES.L1,
+    attributes: { colors: [CardColor.GREEN], shapes: [CardShape.SQUARE], temps: [CardTemp.COLD] },
+    level: 1,
+    description: "基础食器",
+  });
 
-  // Level 2: Rare (12 cards)
+  // Level 2: Rare (16 cards)
   const l2_colors_combinations: CardColor[][] = [
     [CardColor.RED, CardColor.GREEN],
     [CardColor.GREEN, CardColor.YELLOW],
     [CardColor.YELLOW, CardColor.RED],
   ];
 
-  // A. Dual Colors (4 cards)
-  for (let i = 0; i < 4; i++) {
+  // A. Dual Colors (6 cards)
+  for (let i = 0; i < 6; i++) {
     const colorPair = l2_colors_combinations[i % 3];
     const shape = shapes[i % 3];
     const temp = temps[i % 2];
@@ -195,13 +269,13 @@ function generateDecks() {
     });
   }
 
-  // B. Dual Shapes (4 cards)
+  // B. Dual Shapes (6 cards)
   const l2_shapes_combinations: CardShape[][] = [
     [CardShape.CIRCLE, CardShape.SQUARE],
     [CardShape.SQUARE, CardShape.FLOWER],
     [CardShape.FLOWER, CardShape.CIRCLE],
   ];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     const shapePair = l2_shapes_combinations[i % 3];
     const color = colors[i % 3];
     const temp = temps[i % 2];
@@ -230,7 +304,7 @@ function generateDecks() {
   }
 
   // Level 3: Epic (6 cards)
-  // A. All Colors
+  // A. All Colors (百花盘 - 全色兼容) (3张)
   for (let i = 0; i < 3; i++) {
     const shape = shapes[i % 3];
     const temp = temps[i % 2];
@@ -244,7 +318,7 @@ function generateDecks() {
     });
   }
 
-  // B. All Shapes
+  // B. All Shapes (流光盘 - 全形兼容) (3张)
   for (let i = 0; i < 3; i++) {
     const color = colors[i % 3];
     const temp = temps[i % 2];
@@ -260,12 +334,11 @@ function generateDecks() {
 
   return { snackDeck, tablewareDeck };
 }
-
 // Generate and save to file
 const decks = generateDecks();
 const outputPath = path.join(__dirname, "../src/game/decks.json");
 
 fs.writeFileSync(outputPath, JSON.stringify(decks, null, 2), "utf-8");
 console.log(`Deck data generated successfully to: ${outputPath}`);
-console.log(`- Snack cards: ${decks.snackDeck.length}`);
-console.log(`- Tableware cards: ${decks.tablewareDeck.length}`);
+console.log(`- Snack cards: ${decks.snackDeck.length} (预期54张)`);
+console.log(`- Tableware cards: ${decks.tablewareDeck.length} (预期42张)`);

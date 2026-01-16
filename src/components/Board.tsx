@@ -433,28 +433,38 @@ const DraggableWaitingItem = ({
 const GrandmotherStatus: React.FC<{
   players: Record<string, any>;
   rewardDeck: any[];
-}> = ({ players, rewardDeck }) => {
+  jadeGiven: boolean;
+  myOfferingCount: number;
+  myTeaTokens: number;
+  isMyTurn: boolean;
+  myAP: number;
+  onServeTea: () => void;
+}> = ({
+  players,
+  rewardDeck,
+  jadeGiven,
+  myOfferingCount,
+  myTeaTokens,
+  isMyTurn,
+  myAP,
+  onServeTea,
+}) => {
   const allPlayers = Object.values(players);
   const totalOfferings = allPlayers.reduce((sum: number, p: any) => sum + p.offeringArea.length, 0);
 
-  // Check if Jade Chalice has been distributed
-  const jadeDistributed = allPlayers.some(
-    (p: any) =>
-      p.waitingArea.some((w: any) => w.tableware?.name === "玉盏") ||
-      p.personalArea.some((w: any) => w.tableware?.name === "玉盏") ||
-      p.offeringArea.some((w: any) => w.tableware?.name === "玉盏")
-  );
+  // 使用传入的 jadeGiven 标志
+  const jadeDistributed = jadeGiven;
 
   // Check L3 plates remaining in reward deck
   const l3PlatesRemaining = rewardDeck.filter((c: any) => c.level === 3).length;
   const allL3Distributed = l3PlatesRemaining === 0;
 
-  // NEW RULE: Jade judgment triggers every 5 offerings
-  const progressToNextJade = totalOfferings % 5;
-  const isAtJadeThreshold = totalOfferings > 0 && totalOfferings % 5 === 0;
-
   // Game end condition check
   const endConditionMet = jadeDistributed && allL3Distributed;
+
+  // 敬茶条件检查
+  const canServeTea =
+    !jadeGiven && myOfferingCount >= 4 && myTeaTokens >= 3 && isMyTurn && myAP > 0;
 
   return (
     <div className="w-64 bg-stone-900 border-r border-stone-800 p-6 flex flex-col gap-6 text-stone-200 shadow-2xl z-20 shrink-0">
@@ -465,7 +475,7 @@ const GrandmotherStatus: React.FC<{
 
       <div className="space-y-3">
         <div className="flex justify-between items-end">
-          <span className="text-sm font-semibold text-stone-400">奉献对数</span>
+          <span className="text-sm font-semibold text-stone-400">奉献总数</span>
           <span className="text-2xl font-bold text-amber-400 font-serif">{totalOfferings}</span>
         </div>
 
@@ -505,34 +515,27 @@ const GrandmotherStatus: React.FC<{
             ⚡ 结束条件已满足！当前轮结束后游戏终止。
           </div>
         )}
-
-        {!jadeDistributed && (
-          <div
-            className={`text-xs p-3 rounded border ${
-              isAtJadeThreshold
-                ? "bg-amber-900/20 border-amber-900/50 text-amber-200"
-                : "bg-stone-800 border-stone-700 text-stone-400"
-            } transition-colors duration-300`}
-          >
-            {isAtJadeThreshold
-              ? "✨ 触发判定！本次奉献有机会获得【玉盏】赏赐。"
-              : `⏳ 还差 ${5 - progressToNextJade} 盘触发下次【玉盏】判定。`}
-          </div>
-        )}
       </div>
 
-      {/* Threshold Formula Reminder */}
+      {/* 敬茶按钮 */}
+      <ServeTeaButton
+        canServeTea={canServeTea}
+        myOfferingCount={myOfferingCount}
+        myTeaTokens={myTeaTokens}
+        jadeGiven={jadeGiven}
+        isMyTurn={isMyTurn}
+        onServeTea={onServeTea}
+      />
+
+      {/* 奉献规则说明 */}
       <div className="bg-stone-800/50 p-4 rounded-lg text-xs leading-relaxed border border-stone-700">
         <div className="font-bold text-stone-300 mb-2 border-b border-stone-700/50 pb-1">
-          判定规则
+          奉献规则
         </div>
-        <div className="flex flex-col gap-1 font-mono text-amber-500/90 mb-2">
-          <div>2d6 + 我的奉献数 ≥ 12</div>
-        </div>
-        <div className="text-stone-400/80">
-          每满 <span className="text-white font-bold">5盘</span> 触发一次判定。
-          <br />
-          奉献区每有 1盘，骰子 +1。
+        <div className="text-stone-400/80 space-y-1">
+          <div>• 配对分≥1才能奉献</div>
+          <div>• 配对分≥2额外获得1茶券</div>
+          <div>• L1→L2, L2→L3, L3→2茶券</div>
         </div>
       </div>
 
@@ -607,80 +610,59 @@ const GameNotification: React.FC<{ notification: any }> = ({ notification }) => 
   );
 };
 
-// L3奉献选择弹窗
-const L3ChoiceModal: React.FC<{
-  l3ChoicePending: any;
-  myPlayerId: string;
+// 敬茶按钮组件 - 替代原来的L3选择弹窗
+const ServeTeaButton: React.FC<{
+  canServeTea: boolean;
   myOfferingCount: number;
-  onChooseTeaTokens: () => void;
-  onChooseJadeRoll: () => void;
-}> = ({ l3ChoicePending, myPlayerId, myOfferingCount, onChooseTeaTokens, onChooseJadeRoll }) => {
-  if (!l3ChoicePending || l3ChoicePending.playerId !== myPlayerId) return null;
+  myTeaTokens: number;
+  jadeGiven: boolean;
+  isMyTurn: boolean;
+  onServeTea: () => void;
+}> = ({ canServeTea, myOfferingCount, myTeaTokens, jadeGiven, isMyTurn, onServeTea }) => {
+  if (jadeGiven) return null; // 玉盏已发放，不显示按钮
+
+  const meetsOfferingReq = myOfferingCount >= 4;
+  const meetsTeaReq = myTeaTokens >= 3;
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-b from-stone-800 to-stone-900 border-2 border-amber-600 rounded-2xl p-8 max-w-lg w-full shadow-[0_0_40px_rgba(217,119,6,0.4)]">
-        <div className="text-center mb-6">
-          <div className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-2">
-            珍宝盘奉献
-          </div>
-          <h2 className="text-2xl font-serif text-white mb-2">请选择奖励</h2>
-          <p className="text-stone-400 text-sm">您奉献了一个L3珍宝盘，请选择您的奖励</p>
+    <div className="bg-gradient-to-r from-amber-900/30 to-stone-800/50 border border-amber-700/50 rounded-lg p-4 mt-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-amber-400 font-bold font-serif text-lg">敬茶获取玉盏</div>
+        <span className="text-2xl">🏆</span>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div
+          className={`flex items-center gap-2 text-sm ${
+            meetsOfferingReq ? "text-emerald-400" : "text-stone-400"
+          }`}
+        >
+          <span>{meetsOfferingReq ? "✓" : "○"}</span>
+          <span>奉献区至少4盘 ({myOfferingCount}/4)</span>
         </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* 选项1: 稳健赏赐 */}
-          <button
-            onClick={onChooseTeaTokens}
-            className="group relative bg-stone-700/50 hover:bg-emerald-900/50 border-2 border-stone-600 hover:border-emerald-500 rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-          >
-            <div className="text-4xl mb-3">🍵🍵</div>
-            <div className="text-lg font-bold text-emerald-400 mb-2">稳健赏赐</div>
-            <div className="text-sm text-stone-300 mb-3">立即获得 2枚茶券</div>
-            <div className="text-xs text-stone-500">安全选择，确保收益</div>
-          </button>
-
-          {/* 选项2: 博取玉盏 */}
-          <button
-            onClick={onChooseJadeRoll}
-            className="group relative bg-stone-700/50 hover:bg-amber-900/50 border-2 border-stone-600 hover:border-amber-500 rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-          >
-            <div className="text-4xl mb-3">🎲✨</div>
-            <div className="text-lg font-bold text-amber-400 mb-2">博取玉盏</div>
-            <div className="text-sm text-stone-300 mb-3">进行玉盏判定</div>
-            <div className="text-xs text-stone-500">2d6 + {myOfferingCount} ≥ 12</div>
-            <div className="text-xs text-amber-500/70 mt-1">
-              成功率:{" "}
-              {Math.min(100, Math.max(0, Math.round(calculateSuccessRate(myOfferingCount) * 100)))}%
-            </div>
-          </button>
-        </div>
-
-        <div className="mt-6 text-center text-xs text-stone-500">
-          您当前的奉献区有 <span className="text-amber-400 font-bold">{myOfferingCount}</span>{" "}
-          盘，骰子修正 +{myOfferingCount}
+        <div
+          className={`flex items-center gap-2 text-sm ${
+            meetsTeaReq ? "text-emerald-400" : "text-stone-400"
+          }`}
+        >
+          <span>{meetsTeaReq ? "✓" : "○"}</span>
+          <span>消耗3枚茶券 ({myTeaTokens}/3)</span>
         </div>
       </div>
+
+      <button
+        onClick={onServeTea}
+        disabled={!canServeTea || !isMyTurn}
+        className={`w-full py-2 px-4 rounded-lg font-bold transition-all ${
+          canServeTea && isMyTurn
+            ? "bg-amber-600 hover:bg-amber-500 text-white hover:scale-[1.02] shadow-lg"
+            : "bg-stone-700 text-stone-500 cursor-not-allowed"
+        }`}
+      >
+        {canServeTea ? "🍵 敬茶" : "条件未满足"}
+      </button>
     </div>
   );
-};
-
-// 计算成功率 (2d6 + modifier >= 12)
-const calculateSuccessRate = (modifier: number): number => {
-  // 2d6 可能的结果是 2-12
-  // 需要 roll >= (12 - modifier)
-  const target = 12 - modifier;
-  if (target <= 2) return 1; // 100% success
-  if (target > 12) return 0; // 0% success
-
-  // Count combinations that meet or exceed target
-  let successCombinations = 0;
-  for (let d1 = 1; d1 <= 6; d1++) {
-    for (let d2 = 1; d2 <= 6; d2++) {
-      if (d1 + d2 >= target) successCombinations++;
-    }
-  }
-  return successCombinations / 36;
 };
 
 const GameOverScreen: React.FC<{ gameover: any; players: any }> = ({ gameover, players }) => {
@@ -730,7 +712,7 @@ const GameOverScreen: React.FC<{ gameover: any; players: any }> = ({ gameover, p
                   <div className="text-3xl font-bold font-serif">{scoreData.totalScore}</div>
                   <div className="text-[10px] text-stone-500 flex gap-2 justify-end">
                     <span>P: {scoreData.sumP_ind}</span>
-                    <span>O: {scoreData.sumP_off}</span>
+                    <span>O: +{scoreData.c_off}</span>
                     <span>Pen: -{scoreData.c_wait * 2}</span>
                   </div>
                 </div>
@@ -775,13 +757,9 @@ export const Board: React.FC = () => {
     sendMove("startGame", connectedPlayerCount); // Pass connected count
   };
 
-  // L3 Choice Handlers
-  const handleL3ChooseTeaTokens = () => {
-    sendMove("l3ChooseTeaTokens");
-  };
-
-  const handleL3ChooseJadeRoll = () => {
-    sendMove("l3ChooseJadeRoll");
+  // 敬茶 Handler
+  const handleServeTea = () => {
+    sendMove("serveTea");
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -875,13 +853,6 @@ export const Board: React.FC = () => {
         {/* Overlays */}
         <GameNotification notification={G.notification} />
         <GameOverScreen gameover={ctx.gameover} players={G.players} />
-        <L3ChoiceModal
-          l3ChoicePending={G.l3ChoicePending}
-          myPlayerId={myPlayerId}
-          myOfferingCount={myOfferingCount}
-          onChooseTeaTokens={handleL3ChooseTeaTokens}
-          onChooseJadeRoll={handleL3ChooseJadeRoll}
-        />
 
         {/* Header Info */}
         <div className="bg-gray-800 p-2 flex justify-between items-center shadow-md z-30 relative shrink-0">
@@ -897,7 +868,18 @@ export const Board: React.FC = () => {
         {/* Content Wrapper */}
         <div className="flex-grow flex overflow-hidden">
           {/* Sidebar: Grandmother Status */}
-          {isGameStarted && <GrandmotherStatus players={G.players} rewardDeck={G.rewardDeck} />}
+          {isGameStarted && (
+            <GrandmotherStatus
+              players={G.players}
+              rewardDeck={G.rewardDeck}
+              jadeGiven={G.jadeGiven}
+              myOfferingCount={myOfferingCount}
+              myTeaTokens={myTeaTokens}
+              isMyTurn={isMyTurn}
+              myAP={myAP}
+              onServeTea={handleServeTea}
+            />
+          )}
 
           {/* Main Game Area */}
           <div className="flex-grow flex flex-col p-4 gap-4 overflow-y-auto">
