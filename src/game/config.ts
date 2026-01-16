@@ -45,7 +45,8 @@ export interface PublicSlot {
 export interface WaitingItem {
   id: string;
   tableware?: Card;
-  snack?: Card;
+  snack?: Card; // For normal plates (single snack)
+  snacks?: Card[]; // For Jade Chalice (multiple snacks)
 }
 
 export interface PlayerState {
@@ -53,7 +54,9 @@ export interface PlayerState {
   personalArea: WaitingItem[];
   offeringArea: WaitingItem[];
   actionPoints: number;
-  bonusSnackFromJade?: boolean; // Free one-time snack pickup after gaining Jade Chalice
+  teaTokens: number; // Tea tokens earned from personal area snacks
+  teaTokenUsedThisTurn: boolean; // Whether tea token has been used this turn
+  tasteDoneThisTurn: boolean; // 每回合只能品鉴一次
 }
 
 export interface NotificationState {
@@ -61,6 +64,12 @@ export interface NotificationState {
   message: string;
   details?: any; // For displaying calculation breakdowns
   timestamp: number;
+}
+
+// L3奉献时的选择状态
+export interface L3ChoicePending {
+  playerId: string;
+  slotId: string; // 被奉献的物品ID（已移入奉献区）
 }
 
 export interface JadeNightState {
@@ -71,6 +80,7 @@ export interface JadeNightState {
   players: { [key: string]: PlayerState };
   isGameStarted: boolean;
   notification: NotificationState | null;
+  l3ChoicePending: L3ChoicePending | null; // L3奉献等待玩家选择
 }
 
 // --- Helpers ---
@@ -91,29 +101,61 @@ const getDecks = (): { snackDeck: Card[]; tablewareDeck: Card[] } => {
 
 // --- Score Logic ---
 
-const calculatePairingScore = (item: WaitingItem): number => {
-  if (!item.tableware || !item.snack) return 0;
-  const p = item.tableware.attributes;
-  const s = item.snack.attributes;
+// Calculate score for a single snack pairing
+// 规则：盘子上的每一个'圈'若被'点'填满，每个填满的圈产生1点配对分
+// 例如：双色盘[红+绿]配双色点心[红+绿]，颜色维度得2分
+const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
+  const p = tableware.attributes;
+  const s = snack.attributes;
 
   let score = 0;
-  // Color Match
-  if (p.colors.some((c) => s.colors.includes(c))) score += 1;
-  // Shape Match
-  if (p.shapes.some((sh) => s.shapes.includes(sh))) score += 1;
-  // Temp Match
-  if (p.temps.some((t) => s.temps.includes(t))) score += 1;
-
-  // Level Bonus (Higher level snack = more points)
-  if (item.snack.level) {
-    score += item.snack.level;
+  
+  // Color Match: 每个被点心填满的颜色圈得1分
+  for (const c of p.colors) {
+    if (s.colors.includes(c)) score += 1;
+  }
+  
+  // Shape Match: 每个被点心填满的形状圈得1分
+  for (const sh of p.shapes) {
+    if (s.shapes.includes(sh)) score += 1;
+  }
+  
+  // Temp Match: 每个被点心填满的温度圈得1分
+  for (const t of p.temps) {
+    if (s.temps.includes(t)) score += 1;
   }
 
   return score;
 };
 
+const calculatePairingScore = (item: WaitingItem): number => {
+  if (!item.tableware) return 0;
+
+  // Check if this is a Jade Chalice with multiple snacks
+  const isJadeChalice = item.tableware.name === "玉盏";
+
+  if (isJadeChalice && item.snacks && item.snacks.length > 0) {
+    // 玉盏特殊计分：所有点心的配对分去重后求和
+    // 每个点心最多3分（颜色+形状+温度各1分）
+    // 同分值只计一次，鼓励收集不同种类的点心
+    const uniqueScores = new Set<number>();
+    for (const snack of item.snacks) {
+      const score = calculateSinglePairingScore(item.tableware, snack);
+      uniqueScores.add(score);
+    }
+    // Sum of unique scores
+    let totalScore = 0;
+    uniqueScores.forEach((s) => (totalScore += s));
+    return totalScore;
+  }
+
+  // Normal plate with single snack
+  if (!item.snack) return 0;
+  return calculateSinglePairingScore(item.tableware, item.snack);
+};
+
 const calculateFinalScore = (player: PlayerState) => {
-  // S = Sum(P_ind) + Sum(P_off) + C_off - C_wait
+  // S = Sum(P_ind) + Sum(P_off) - C_wait * 2
 
   // 1. Personal Area Scores (pairing scores)
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
@@ -121,15 +163,16 @@ const calculateFinalScore = (player: PlayerState) => {
   // 2. Offering Area Scores (pairing scores too)
   const sumP_off = player.offeringArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
-  // 3. Offering Count Bonus (C_off)
-  const c_off = player.offeringArea.length;
+  // 3. Waiting Area Penalty (C_wait) - 只计算有点心的盘子
+  const c_wait = player.waitingArea.filter(item => {
+    const isJadeChalice = item.tableware?.name === "玉盏";
+    return isJadeChalice ? (item.snacks && item.snacks.length > 0) : !!item.snack;
+  }).length;
 
-  // 4. Waiting Area Penalty (C_wait)
-  const c_wait = player.waitingArea.length;
+  // 公式: S = Sum(P_ind) + Sum(P_off) - C_wait * 2
+  const totalScore = sumP_ind + sumP_off - c_wait * 2;
 
-  const totalScore = sumP_ind + sumP_off + c_off - c_wait;
-
-  return { totalScore, sumP_ind, sumP_off, c_off, c_wait };
+  return { totalScore, sumP_ind, sumP_off, c_wait };
 };
 
 export const JadeNightGame: Game<JadeNightState> = {
@@ -153,7 +196,9 @@ export const JadeNightGame: Game<JadeNightState> = {
         personalArea: [],
         offeringArea: [],
         actionPoints: 0,
-        bonusSnackFromJade: false,
+        teaTokens: 0,
+        teaTokenUsedThisTurn: false,
+        tasteDoneThisTurn: false,
       };
     }
 
@@ -171,6 +216,7 @@ export const JadeNightGame: Game<JadeNightState> = {
       players,
       isGameStarted: false,
       notification: null,
+      l3ChoicePending: null,
     };
   },
 
@@ -190,24 +236,33 @@ export const JadeNightGame: Game<JadeNightState> = {
     onBegin: ({ G, ctx }) => {
       const player = G.players[ctx.currentPlayer];
       if (player) {
-        const personalCount = player.personalArea.length;
-        // Base AP = 2. Bonus AP = +1 for every 2 plates in personal area.
-        player.actionPoints = 2 + Math.floor(personalCount / 2);
+        // Base AP = 3. Tea tokens can be used for +1 AP (max 1 per turn).
+        player.actionPoints = 3;
+        player.teaTokenUsedThisTurn = false; // Reset tea token usage for new turn
+        player.tasteDoneThisTurn = false; // 重置每回合品鉴限制
       }
     },
   },
 
   endIf: ({ G, ctx }) => {
-    // Prefer G.players length as we dynamically adjust it
-    const numPlayers = Object.keys(G.players).length || ctx.numPlayers || 2;
-    const { endThreshold } = getGameThresholds(numPlayers);
-
-    const totalOfferings = Object.values(G.players).reduce(
-      (sum, p) => sum + p.offeringArea.length,
-      0
+    // Check if Jade Chalice has been distributed
+    const jadeDistributed = Object.values(G.players).some(
+      (p) =>
+        p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
+        p.personalArea.some((w) => w.tableware?.name === "玉盏") ||
+        p.offeringArea.some((w) => w.tableware?.name === "玉盏")
     );
 
-    if (totalOfferings >= endThreshold) {
+    // Check if all L3 plates have been distributed (none left in reward deck)
+    const l3PlatesRemaining = G.rewardDeck.filter((c) => c.level === 3).length;
+    const allL3Distributed = l3PlatesRemaining === 0;
+
+    // Game ends when both Jade Chalice and all L3 plates are distributed,
+    // and we complete a fair round (back to player 0)
+    const endConditionMet = jadeDistributed && allL3Distributed;
+    const isStartOfRound = ctx.currentPlayer === "0";
+
+    if (endConditionMet && isStartOfRound) {
       // Calculate scores
       const scores: Record<string, any> = {};
       let maxScore = -Infinity;
@@ -227,13 +282,14 @@ export const JadeNightGame: Game<JadeNightState> = {
         } else if (s.totalScore === maxScore) {
           // Tie break
           const currentWinner = G.players[winnerId];
-          const currentScore = scores[winnerId];
 
-          // 1. C_off higher
-          if (s.c_off > currentScore.c_off) {
+          // 1. C_off higher (奉献区盘数更多者胜)
+          const currentC_off = currentWinner.offeringArea.length;
+          const newC_off = p.offeringArea.length;
+          if (newC_off > currentC_off) {
             winnerId = pid;
-          } else if (s.c_off === currentScore.c_off) {
-            // 2. Personal Area Count lower
+          } else if (newC_off === currentC_off) {
+            // 2. Personal Area Count lower (个人区盘子数更少者胜)
             if (p.personalArea.length < currentWinner.personalArea.length) {
               winnerId = pid;
             }
@@ -241,7 +297,7 @@ export const JadeNightGame: Game<JadeNightState> = {
         }
       });
 
-      return { scores, winnerId, reason: "limit_reached" };
+      return { scores, winnerId, reason: "jade_and_l3_distributed" };
     }
   },
 
@@ -249,6 +305,23 @@ export const JadeNightGame: Game<JadeNightState> = {
     // Manual end turn
     endTurn: ({ events }) => {
       events.endTurn();
+    },
+
+    // Use a tea token to gain +1 AP (max 1 per turn)
+    useTeaToken: ({ G, playerID }) => {
+      const player = G.players[playerID];
+      if (!player) return INVALID_MOVE;
+
+      // Check if player has tea tokens
+      if (player.teaTokens <= 0) return INVALID_MOVE;
+
+      // Check if already used tea token this turn
+      if (player.teaTokenUsedThisTurn) return INVALID_MOVE;
+
+      // Use the tea token
+      player.teaTokens -= 1;
+      player.actionPoints += 1;
+      player.teaTokenUsedThisTurn = true;
     },
 
     startGame: ({ G, random, playerID }, actualPlayerCount?: number) => {
@@ -293,9 +366,9 @@ export const JadeNightGame: Game<JadeNightState> = {
         if (G.snackDeck.length > 0) slot.snack = G.snackDeck.shift();
       });
 
-      // Initialize AP for current player
+      // Initialize AP for current player (基础行动点为3)
       const currentPlayer = G.players[playerID];
-      if (currentPlayer) currentPlayer.actionPoints = 2;
+      if (currentPlayer) currentPlayer.actionPoints = 3;
 
       G.isGameStarted = true;
     },
@@ -332,9 +405,7 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       if (!card) return INVALID_MOVE;
 
-      const isFreeSnack = isSnack && player.bonusSnackFromJade === true;
-
-      if (!isFreeSnack && player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.actionPoints <= 0) return INVALID_MOVE;
 
       // Logic for placing card
       if (targetSlotId) {
@@ -342,9 +413,23 @@ export const JadeNightGame: Game<JadeNightState> = {
         const waitingSlot = player.waitingArea.find((s) => s.id === targetSlotId);
         if (!waitingSlot) return INVALID_MOVE;
 
-        // Can only place Snack on empty Tableware
-        if (isSnack && waitingSlot.tableware && !waitingSlot.snack) {
-          waitingSlot.snack = card;
+        // Check if this is a Jade Chalice (can stack up to 3 snacks)
+        const isJadeChalice = waitingSlot.tableware?.name === "玉盏";
+
+        if (isSnack && waitingSlot.tableware) {
+          if (isJadeChalice) {
+            // Jade Chalice: can stack up to 3 snacks
+            if (!waitingSlot.snacks) {
+              waitingSlot.snacks = [];
+            }
+            // 玉盏最多堆叠3盘点心
+            if (waitingSlot.snacks.length >= 3) return INVALID_MOVE;
+            waitingSlot.snacks.push(card);
+          } else {
+            // Normal plate: can only have one snack
+            if (waitingSlot.snack) return INVALID_MOVE;
+            waitingSlot.snack = card;
+          }
         } else {
           return INVALID_MOVE;
         }
@@ -381,70 +466,44 @@ export const JadeNightGame: Game<JadeNightState> = {
         }
       }
 
-      if (isFreeSnack) {
-        player.bonusSnackFromJade = false;
-      } else {
-        // Deduct AP
-        player.actionPoints -= 1;
-      }
+      // Deduct AP
+      player.actionPoints -= 1;
 
-      // End turn if no AP and no pending jade snack
-      if (player.actionPoints <= 0 && !player.bonusSnackFromJade) {
+      // End turn if no AP
+      if (player.actionPoints <= 0) {
         events.endTurn();
       }
-    },
-
-    // Jade Chalice bonus: take a snack from any waiting area (not personal/offering) without spending AP
-    takeJadeSnackFromWaiting: (
-      { G, playerID, events },
-      {
-        sourcePlayerId,
-        sourceSlotId,
-        targetSlotId,
-      }: { sourcePlayerId: string; sourceSlotId: string; targetSlotId: string }
-    ) => {
-      const pid = playerID || "0";
-      const player = G.players[pid];
-      if (!player || !player.bonusSnackFromJade) return INVALID_MOVE;
-
-      const targetSlot = player.waitingArea.find((s) => s.id === targetSlotId);
-      if (!targetSlot || !targetSlot.tableware || targetSlot.snack) return INVALID_MOVE;
-
-      const owner = G.players[sourcePlayerId];
-      if (!owner) return INVALID_MOVE;
-      const sourceSlot = owner.waitingArea.find((s) => s.id === sourceSlotId);
-      if (!sourceSlot || !sourceSlot.snack) return INVALID_MOVE;
-
-      const snackCard = sourceSlot.snack;
-      sourceSlot.snack = undefined;
-      targetSlot.snack = snackCard;
-
-      // Consume bonus
-      player.bonusSnackFromJade = false;
-
-      if (player.actionPoints <= 0) events.endTurn();
     },
 
     taste: ({ G, playerID, events }, { slotId }: { slotId: string }) => {
       const player = G.players[playerID];
       if (player.actionPoints <= 0) return INVALID_MOVE;
 
+      // 每回合只能品鉴一次点心
+      if (player.tasteDoneThisTurn) return INVALID_MOVE;
+
       const slotIndex = player.waitingArea.findIndex((s) => s.id === slotId);
       if (slotIndex === -1) return INVALID_MOVE;
       const item = player.waitingArea[slotIndex];
 
-      // Must have plate and snack to taste (according to rules "Plate + Snack")
-      // Rule B: "Move a set of 'Plate+Snack' to personal area"
-      if (!item.tableware || !item.snack) return INVALID_MOVE;
+      // Must have plate and at least one snack to taste
+      const isJadeChalice = item.tableware?.name === "玉盏";
+      const hasSnack = isJadeChalice ? item.snacks && item.snacks.length > 0 : !!item.snack;
 
-      // Check Limit for Personal Area (Max 5)
-      if (player.personalArea.length >= 5) return INVALID_MOVE;
+      if (!item.tableware || !hasSnack) return INVALID_MOVE;
 
       // Move to personal area
       player.personalArea.push(item);
       player.waitingArea.splice(slotIndex, 1);
 
+      // Tea Token reward: every 2 snacks in personal area grants 1 tea token
+      // Check if this completes a pair (2nd, 4th snack)
+      if (player.personalArea.length % 2 === 0) {
+        player.teaTokens += 1;
+      }
+
       player.actionPoints -= 1;
+      player.tasteDoneThisTurn = true; // 标记本回合已品鉴
       if (player.actionPoints <= 0) events.endTurn();
     },
 
@@ -452,32 +511,68 @@ export const JadeNightGame: Game<JadeNightState> = {
       const player = G.players[ctx.currentPlayer];
       if (player.actionPoints <= 0) return INVALID_MOVE;
 
+      // 如果有未完成的L3选择，不允许进行新的奉献
+      if (G.l3ChoicePending) return INVALID_MOVE;
+
       const slotIndex = player.waitingArea.findIndex((s) => s.id === slotId);
       if (slotIndex === -1) return INVALID_MOVE;
       const item = player.waitingArea[slotIndex];
 
-      if (!item.tableware || !item.snack) return INVALID_MOVE;
+      // Check if this is a Jade Chalice with multiple snacks
+      const isJadeChalice = item.tableware?.name === "玉盏";
+      const hasSnack = isJadeChalice ? item.snacks && item.snacks.length > 0 : !!item.snack;
 
-      // Validation: Material Match (Temp)
-      // Rule C: "Material/Temp dimension must match"
-      const hasTempMatch = item.tableware.attributes.temps.some((t) =>
-        item.snack!.attributes.temps.includes(t)
-      );
-      // Note: L3 plates might have all temps, so check attribute intersection.
+      if (!item.tableware || !hasSnack) return INVALID_MOVE;
 
-      if (!hasTempMatch) return INVALID_MOVE;
+      // 奉献不需要温度匹配限制
 
-      // Check Limit for Offering Area (Max 5)
-      if (player.offeringArea.length >= 5) return INVALID_MOVE;
+      const currentLevel = item.tableware.level;
 
       // Move to offering area
+      const offeredItemId = item.id;
       player.offeringArea.push(item);
       player.waitingArea.splice(slotIndex, 1);
 
-      // --- Loyalty Reward Logic ---
-      const numPlayers = ctx.numPlayers || Object.keys(G.players).length || 2;
-      const { jadeThreshold } = getGameThresholds(numPlayers);
-      // Note: totalOfferings should include the one just added? Yes.
+      player.actionPoints -= 1;
+
+      // 检查是否是L3奉献 - 需要玩家选择
+      if (currentLevel === 3) {
+        // 检查玉盏是否已经发放
+        const jadeAlreadyGiven = Object.values(G.players).some(
+          (p) =>
+            p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
+            p.personalArea.some((w) => w.tableware?.name === "玉盏") ||
+            p.offeringArea.some((w) => w.tableware?.name === "玉盏")
+        );
+
+        if (jadeAlreadyGiven) {
+          // 玉盏已发放，L3奉献只能获得2茶券
+          player.teaTokens += 2;
+          G.notification = {
+            type: "offering",
+            message: "奉献珍宝盘！玉盏已被获取，获得 2枚茶券。",
+            details: null,
+            timestamp: Date.now(),
+          };
+          if (player.actionPoints <= 0) events.endTurn();
+        } else {
+          // 玉盏未发放，设置等待选择状态
+          G.l3ChoicePending = {
+            playerId: ctx.currentPlayer,
+            slotId: offeredItemId,
+          };
+          G.notification = {
+            type: "info",
+            message: "奉献珍宝盘！请选择奖励：稳健赏赐(2茶券) 或 博取玉盏(骰子判定)",
+            details: null,
+            timestamp: Date.now(),
+          };
+          // 不结束回合，等待选择
+        }
+        return;
+      }
+
+      // --- 非L3奉献的常规奖励逻辑 ---
       const totalOfferings = Object.values(G.players).reduce(
         (sum, p) => sum + p.offeringArea.length,
         0
@@ -488,11 +583,8 @@ export const JadeNightGame: Game<JadeNightState> = {
       let grantStandardReward = true;
 
       // 1. Jade Chalice Judgement
-      // Condition: Total Offerings >= Jade Threshold
-      // BUT, Jade Chalice is a unique item. We should only give it if not already given?
-      // Or can multiple be given? Doc says "The Jade Chalice". Implying one.
-      // Assuming unique for now, but implementation below allows multiple if not checked.
-      // To prevent duplicate: check if any player has "Jade Chalice".
+      // Trigger every time total offerings reaches a multiple of 5 (5, 10, 15...)
+      // Only if Jade Chalice hasn't been given yet
       const jadeAlreadyGiven = Object.values(G.players).some(
         (p) =>
           p.waitingArea.some((w) => w.tableware?.name === "玉盏") ||
@@ -500,23 +592,25 @@ export const JadeNightGame: Game<JadeNightState> = {
           p.offeringArea.some((w) => w.tableware?.name === "玉盏")
       );
 
-      if (totalOfferings >= jadeThreshold && !jadeAlreadyGiven) {
-        const n_component = totalOfferings - (jadeThreshold - 1); // e.g. Threshold 10. Curr 10 => 10-(9) = 1.
-        const p_offerings = player.offeringArea.length;
-        const pair_score = calculatePairingScore(item); // item is what we just offered
+      // Check if this offering triggers a jade judgment (every 5 offerings)
+      const triggersJadeJudgment = totalOfferings > 0 && totalOfferings % 5 === 0;
 
-        const T = n_component + p_offerings + pair_score;
+      if (triggersJadeJudgment && !jadeAlreadyGiven) {
+        // Roll 2d6 + C_off >= 12 to succeed (C_off = player's offering count)
+        const p_offerings = player.offeringArea.length;
 
         const d1 = random.D6();
         const d2 = random.D6();
-        const roll = d1 + d2;
-        const success = roll < T;
+        const baseRoll = d1 + d2;
+        const modifiedRoll = baseRoll + p_offerings;
+        const success = modifiedRoll >= 12;
 
         jadeResult = {
-          threshold: T,
-          roll: roll,
+          targetScore: 12,
+          baseRoll: baseRoll,
+          modifier: p_offerings,
+          modifiedRoll: modifiedRoll,
           dice: [d1, d2],
-          components: { n: n_component, p: p_offerings, s: pair_score },
           success,
         };
 
@@ -532,35 +626,31 @@ export const JadeNightGame: Game<JadeNightState> = {
               temps: Object.values(CardTemp),
             },
             level: 4, // Legendary
-            description: "玉盏",
+            description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
           };
 
           player.waitingArea.push({
             id: `jade-card-${Date.now()}`,
             tableware: jadeChalice,
             snack: undefined,
+            snacks: [],
           });
 
-          player.bonusSnackFromJade = true;
-
-          rewardMessage = "判定成功！获得【玉盏】！可立即免费从任意等待区或公共区拿取一份点心。";
-          grantStandardReward = false; // Jade replaces standard reward
+          rewardMessage = "判定成功！获得【玉盏】！可在其上堆叠三盘点心。";
+          grantStandardReward = false;
         } else {
           rewardMessage = "判定未通过。";
-          // Fallback to standard reward
           grantStandardReward = true;
         }
       }
 
       // 2. Regular Upgrade (Standard Reward)
       if (grantStandardReward) {
-        const currentLevel = item.tableware.level;
         const targetLevel = currentLevel + 1;
         const rewardIndex = G.rewardDeck.findIndex((c) => c.level === targetLevel);
 
         if (rewardIndex !== -1) {
           const rewardPlate = G.rewardDeck.splice(rewardIndex, 1)[0];
-          // Add to waiting area
           player.waitingArea.push({
             id: `reward-plate-${Date.now()}`,
             tableware: rewardPlate,
@@ -568,15 +658,11 @@ export const JadeNightGame: Game<JadeNightState> = {
           });
           rewardMessage += ` 获得升级食盘 (L${targetLevel})。`;
         } else {
-          // No suitable plate? Just get nothing (or maybe score points? implied).
           if (currentLevel < 3) rewardMessage += ` 牌堆无L${targetLevel}食盘。`;
           else rewardMessage += ` 已达最高等级。`;
         }
       }
 
-      player.actionPoints -= 1;
-
-      // Set Notification for UI
       G.notification = {
         type: "offering",
         message: rewardMessage,
@@ -584,7 +670,89 @@ export const JadeNightGame: Game<JadeNightState> = {
         timestamp: Date.now(),
       };
 
-      if (player.actionPoints <= 0 && !player.bonusSnackFromJade) events.endTurn();
+      if (player.actionPoints <= 0) events.endTurn();
+    },
+
+    // L3奉献选择：稳健赏赐（获得2茶券）
+    l3ChooseTeaTokens: ({ G, ctx, events }) => {
+      if (!G.l3ChoicePending) return INVALID_MOVE;
+      if (G.l3ChoicePending.playerId !== ctx.currentPlayer) return INVALID_MOVE;
+
+      const player = G.players[ctx.currentPlayer];
+      player.teaTokens += 2;
+
+      G.l3ChoicePending = null;
+      G.notification = {
+        type: "offering",
+        message: "选择稳健赏赐！获得 2枚茶券。",
+        details: null,
+        timestamp: Date.now(),
+      };
+
+      if (player.actionPoints <= 0) events.endTurn();
+    },
+
+    // L3奉献选择：博取玉盏（进行骰子判定）
+    l3ChooseJadeRoll: ({ G, ctx, events, random }) => {
+      if (!G.l3ChoicePending) return INVALID_MOVE;
+      if (G.l3ChoicePending.playerId !== ctx.currentPlayer) return INVALID_MOVE;
+
+      const player = G.players[ctx.currentPlayer];
+      const p_offerings = player.offeringArea.length;
+
+      const d1 = random.D6();
+      const d2 = random.D6();
+      const baseRoll = d1 + d2;
+      const modifiedRoll = baseRoll + p_offerings;
+      const success = modifiedRoll >= 12;
+
+      const jadeResult = {
+        targetScore: 12,
+        baseRoll: baseRoll,
+        modifier: p_offerings,
+        modifiedRoll: modifiedRoll,
+        dice: [d1, d2],
+        success,
+      };
+
+      let rewardMessage = "";
+
+      if (success) {
+        // Grant Jade Chalice
+        const jadeChalice: Card = {
+          id: `jade-chalice-${Date.now()}`,
+          type: "Tableware",
+          name: "玉盏",
+          attributes: {
+            colors: Object.values(CardColor),
+            shapes: Object.values(CardShape),
+            temps: Object.values(CardTemp),
+          },
+          level: 4,
+          description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
+        };
+
+        player.waitingArea.push({
+          id: `jade-card-${Date.now()}`,
+          tableware: jadeChalice,
+          snack: undefined,
+          snacks: [],
+        });
+
+        rewardMessage = "博取玉盏成功！获得【玉盏】！";
+      } else {
+        rewardMessage = "博取玉盏失败，判定未通过。";
+      }
+
+      G.l3ChoicePending = null;
+      G.notification = {
+        type: "offering",
+        message: rewardMessage,
+        details: jadeResult,
+        timestamp: Date.now(),
+      };
+
+      if (player.actionPoints <= 0) events.endTurn();
     },
   },
 };

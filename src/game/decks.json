@@ -1,7 +1,7 @@
 {
   "snackDeck": [
     {
-      "id": "snack-L1-0",
+      "id": "snack-basic-0",
       "type": "Snack",
       "name": "玫瑰赤豆糕",
       "attributes": {
@@ -19,9 +19,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-1",
+      "id": "snack-basic-1",
       "type": "Snack",
-      "name": "red circle cold 点心",
+      "name": "冰镇樱桃冻",
       "attributes": {
         "colors": [
           "red"
@@ -37,9 +37,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-2",
+      "id": "snack-basic-2",
       "type": "Snack",
-      "name": "red square warm 点心",
+      "name": "红枣方糕",
       "attributes": {
         "colors": [
           "red"
@@ -55,9 +55,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-3",
+      "id": "snack-basic-3",
       "type": "Snack",
-      "name": "red square cold 点心",
+      "name": "杨梅冰糕",
       "attributes": {
         "colors": [
           "red"
@@ -73,9 +73,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-4",
+      "id": "snack-basic-4",
       "type": "Snack",
-      "name": "red flower warm 点心",
+      "name": "桃花酥",
       "attributes": {
         "colors": [
           "red"
@@ -91,9 +91,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-5",
+      "id": "snack-basic-5",
       "type": "Snack",
-      "name": "red flower cold 点心",
+      "name": "玫瑰花冻",
       "attributes": {
         "colors": [
           "red"
@@ -109,9 +109,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-6",
+      "id": "snack-basic-6",
       "type": "Snack",
-      "name": "green circle warm 点心",
+      "name": "抹茶汤圆",
       "attributes": {
         "colors": [
           "green"
@@ -127,9 +127,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-7",
+      "id": "snack-basic-7",
       "type": "Snack",
-      "name": "green circle cold 点心",
+      "name": "薄荷糯米团",
       "attributes": {
         "colors": [
           "green"
@@ -145,9 +145,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-8",
+      "id": "snack-basic-8",
       "type": "Snack",
-      "name": "green square warm 点心",
+      "name": "艾草青团",
       "attributes": {
         "colors": [
           "green"
@@ -163,7 +163,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-9",
+      "id": "snack-basic-9",
       "type": "Snack",
       "name": "翡翠薄荷冻",
       "attributes": {
@@ -181,9 +181,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-10",
+      "id": "snack-basic-10",
       "type": "Snack",
-      "name": "green flower warm 点心",
+      "name": "茉莉花糕",
       "attributes": {
         "colors": [
           "green"
@@ -199,9 +199,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-11",
+      "id": "snack-basic-11",
       "type": "Snack",
-      "name": "green flower cold 点心",
+      "name": "绿豆冰糕",
       "attributes": {
         "colors": [
           "green"
@@ -217,9 +217,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-12",
+      "id": "snack-basic-12",
       "type": "Snack",
-      "name": "yellow circle warm 点心",
+      "name": "南瓜圆子",
       "attributes": {
         "colors": [
           "yellow"
@@ -235,9 +235,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-13",
+      "id": "snack-basic-13",
       "type": "Snack",
-      "name": "yellow circle cold 点心",
+      "name": "柠檬冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -253,9 +253,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-14",
+      "id": "snack-basic-14",
       "type": "Snack",
-      "name": "yellow square warm 点心",
+      "name": "桂花糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -271,9 +271,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-15",
+      "id": "snack-basic-15",
       "type": "Snack",
-      "name": "yellow square cold 点心",
+      "name": "芒果冰糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -289,7 +289,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-16",
+      "id": "snack-basic-16",
       "type": "Snack",
       "name": "金桂海棠酥",
       "attributes": {
@@ -307,9 +307,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-17",
+      "id": "snack-basic-17",
       "type": "Snack",
-      "name": "yellow flower cold 点心",
+      "name": "菊花冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -325,7 +325,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-18",
+      "id": "snack-basic-18",
       "type": "Snack",
       "name": "玫瑰赤豆糕",
       "attributes": {
@@ -343,9 +343,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-19",
+      "id": "snack-basic-19",
       "type": "Snack",
-      "name": "red circle cold 点心",
+      "name": "冰镇樱桃冻",
       "attributes": {
         "colors": [
           "red"
@@ -361,9 +361,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-20",
+      "id": "snack-basic-20",
       "type": "Snack",
-      "name": "red square warm 点心",
+      "name": "红枣方糕",
       "attributes": {
         "colors": [
           "red"
@@ -379,9 +379,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-21",
+      "id": "snack-basic-21",
       "type": "Snack",
-      "name": "red square cold 点心",
+      "name": "杨梅冰糕",
       "attributes": {
         "colors": [
           "red"
@@ -397,9 +397,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-22",
+      "id": "snack-basic-22",
       "type": "Snack",
-      "name": "red flower warm 点心",
+      "name": "桃花酥",
       "attributes": {
         "colors": [
           "red"
@@ -415,9 +415,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-23",
+      "id": "snack-basic-23",
       "type": "Snack",
-      "name": "red flower cold 点心",
+      "name": "玫瑰花冻",
       "attributes": {
         "colors": [
           "red"
@@ -433,9 +433,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-24",
+      "id": "snack-basic-24",
       "type": "Snack",
-      "name": "green circle warm 点心",
+      "name": "抹茶汤圆",
       "attributes": {
         "colors": [
           "green"
@@ -451,9 +451,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-25",
+      "id": "snack-basic-25",
       "type": "Snack",
-      "name": "green circle cold 点心",
+      "name": "薄荷糯米团",
       "attributes": {
         "colors": [
           "green"
@@ -469,9 +469,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-26",
+      "id": "snack-basic-26",
       "type": "Snack",
-      "name": "green square warm 点心",
+      "name": "艾草青团",
       "attributes": {
         "colors": [
           "green"
@@ -487,7 +487,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-27",
+      "id": "snack-basic-27",
       "type": "Snack",
       "name": "翡翠薄荷冻",
       "attributes": {
@@ -505,9 +505,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-28",
+      "id": "snack-basic-28",
       "type": "Snack",
-      "name": "green flower warm 点心",
+      "name": "茉莉花糕",
       "attributes": {
         "colors": [
           "green"
@@ -523,9 +523,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-29",
+      "id": "snack-basic-29",
       "type": "Snack",
-      "name": "green flower cold 点心",
+      "name": "绿豆冰糕",
       "attributes": {
         "colors": [
           "green"
@@ -541,9 +541,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-30",
+      "id": "snack-basic-30",
       "type": "Snack",
-      "name": "yellow circle warm 点心",
+      "name": "南瓜圆子",
       "attributes": {
         "colors": [
           "yellow"
@@ -559,9 +559,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-31",
+      "id": "snack-basic-31",
       "type": "Snack",
-      "name": "yellow circle cold 点心",
+      "name": "柠檬冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -577,9 +577,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-32",
+      "id": "snack-basic-32",
       "type": "Snack",
-      "name": "yellow square warm 点心",
+      "name": "桂花糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -595,9 +595,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-33",
+      "id": "snack-basic-33",
       "type": "Snack",
-      "name": "yellow square cold 点心",
+      "name": "芒果冰糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -613,7 +613,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-34",
+      "id": "snack-basic-34",
       "type": "Snack",
       "name": "金桂海棠酥",
       "attributes": {
@@ -631,9 +631,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-35",
+      "id": "snack-basic-35",
       "type": "Snack",
-      "name": "yellow flower cold 点心",
+      "name": "菊花冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -649,7 +649,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-36",
+      "id": "snack-basic-36",
       "type": "Snack",
       "name": "玫瑰赤豆糕",
       "attributes": {
@@ -667,9 +667,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-37",
+      "id": "snack-basic-37",
       "type": "Snack",
-      "name": "red circle cold 点心",
+      "name": "冰镇樱桃冻",
       "attributes": {
         "colors": [
           "red"
@@ -685,9 +685,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-38",
+      "id": "snack-basic-38",
       "type": "Snack",
-      "name": "red square warm 点心",
+      "name": "红枣方糕",
       "attributes": {
         "colors": [
           "red"
@@ -703,9 +703,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-39",
+      "id": "snack-basic-39",
       "type": "Snack",
-      "name": "red square cold 点心",
+      "name": "杨梅冰糕",
       "attributes": {
         "colors": [
           "red"
@@ -721,9 +721,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-40",
+      "id": "snack-basic-40",
       "type": "Snack",
-      "name": "red flower warm 点心",
+      "name": "桃花酥",
       "attributes": {
         "colors": [
           "red"
@@ -739,9 +739,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-41",
+      "id": "snack-basic-41",
       "type": "Snack",
-      "name": "red flower cold 点心",
+      "name": "玫瑰花冻",
       "attributes": {
         "colors": [
           "red"
@@ -757,9 +757,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-42",
+      "id": "snack-basic-42",
       "type": "Snack",
-      "name": "green circle warm 点心",
+      "name": "抹茶汤圆",
       "attributes": {
         "colors": [
           "green"
@@ -775,9 +775,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-43",
+      "id": "snack-basic-43",
       "type": "Snack",
-      "name": "green circle cold 点心",
+      "name": "薄荷糯米团",
       "attributes": {
         "colors": [
           "green"
@@ -793,9 +793,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-44",
+      "id": "snack-basic-44",
       "type": "Snack",
-      "name": "green square warm 点心",
+      "name": "艾草青团",
       "attributes": {
         "colors": [
           "green"
@@ -811,7 +811,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-45",
+      "id": "snack-basic-45",
       "type": "Snack",
       "name": "翡翠薄荷冻",
       "attributes": {
@@ -829,9 +829,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-46",
+      "id": "snack-basic-46",
       "type": "Snack",
-      "name": "green flower warm 点心",
+      "name": "茉莉花糕",
       "attributes": {
         "colors": [
           "green"
@@ -847,9 +847,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-47",
+      "id": "snack-basic-47",
       "type": "Snack",
-      "name": "green flower cold 点心",
+      "name": "绿豆冰糕",
       "attributes": {
         "colors": [
           "green"
@@ -865,9 +865,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-48",
+      "id": "snack-basic-48",
       "type": "Snack",
-      "name": "yellow circle warm 点心",
+      "name": "南瓜圆子",
       "attributes": {
         "colors": [
           "yellow"
@@ -883,9 +883,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-49",
+      "id": "snack-basic-49",
       "type": "Snack",
-      "name": "yellow circle cold 点心",
+      "name": "柠檬冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -901,9 +901,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-50",
+      "id": "snack-basic-50",
       "type": "Snack",
-      "name": "yellow square warm 点心",
+      "name": "桂花糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -919,9 +919,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-51",
+      "id": "snack-basic-51",
       "type": "Snack",
-      "name": "yellow square cold 点心",
+      "name": "芒果冰糕",
       "attributes": {
         "colors": [
           "yellow"
@@ -937,7 +937,7 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-52",
+      "id": "snack-basic-52",
       "type": "Snack",
       "name": "金桂海棠酥",
       "attributes": {
@@ -955,9 +955,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L1-53",
+      "id": "snack-basic-53",
       "type": "Snack",
-      "name": "yellow flower cold 点心",
+      "name": "菊花冻",
       "attributes": {
         "colors": [
           "yellow"
@@ -973,9 +973,9 @@
       "description": "精致点心"
     },
     {
-      "id": "snack-L2-C-54",
+      "id": "snack-twin-color-54",
       "type": "Snack",
-      "name": "双色点心",
+      "name": "鸳鸯双色卷",
       "attributes": {
         "colors": [
           "red",
@@ -989,167 +989,15 @@
         ]
       },
       "level": 2,
-      "description": "双色风味"
+      "description": "双色风味，一口尽享两种色彩"
     },
     {
-      "id": "snack-L2-C-55",
+      "id": "snack-twin-color-55",
       "type": "Snack",
-      "name": "双色点心",
+      "name": "金玉满堂糕",
       "attributes": {
         "colors": [
           "red",
-          "green"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-56",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "red",
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-57",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "red",
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-58",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "red",
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-59",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "red",
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-60",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-61",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-62",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-63",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "green",
           "yellow"
         ],
         "shapes": [
@@ -1160,12 +1008,12 @@
         ]
       },
       "level": 2,
-      "description": "双色风味"
+      "description": "双色风味，一口尽享两种色彩"
     },
     {
-      "id": "snack-L2-C-64",
+      "id": "snack-twin-color-56",
       "type": "Snack",
-      "name": "双色点心",
+      "name": "翡翠金丝饼",
       "attributes": {
         "colors": [
           "green",
@@ -1179,164 +1027,12 @@
         ]
       },
       "level": 2,
-      "description": "双色风味"
+      "description": "双色风味，一口尽享两种色彩"
     },
     {
-      "id": "snack-L2-C-65",
+      "id": "snack-twin-shape-57",
       "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-66",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-67",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-68",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-69",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-70",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-C-71",
-      "type": "Snack",
-      "name": "双色点心",
-      "attributes": {
-        "colors": [
-          "yellow",
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "双色风味"
-    },
-    {
-      "id": "snack-L2-S-72",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle",
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-73",
-      "type": "Snack",
-      "name": "双形点心",
+      "name": "乾坤方圆盒",
       "attributes": {
         "colors": [
           "red"
@@ -1350,94 +1046,18 @@
         ]
       },
       "level": 2,
-      "description": "精美造型"
+      "description": "双形造型，精美绝伦"
     },
     {
-      "id": "snack-L2-S-74",
+      "id": "snack-twin-shape-58",
       "type": "Snack",
-      "name": "双形点心",
+      "name": "花好月圆饼",
       "attributes": {
         "colors": [
           "green"
         ],
         "shapes": [
           "circle",
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-75",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle",
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-76",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle",
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-77",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle",
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-78",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square",
           "flower"
         ],
         "temps": [
@@ -1445,88 +1065,12 @@
         ]
       },
       "level": 2,
-      "description": "精美造型"
+      "description": "双形造型，精美绝伦"
     },
     {
-      "id": "snack-L2-S-79",
+      "id": "snack-twin-shape-59",
       "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-80",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-81",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-82",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-83",
-      "type": "Snack",
-      "name": "双形点心",
+      "name": "锦绣攒盒",
       "attributes": {
         "colors": [
           "yellow"
@@ -1540,366 +1084,12 @@
         ]
       },
       "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-84",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-85",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-86",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-87",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-88",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L2-S-89",
-      "type": "Snack",
-      "name": "双形点心",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower",
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 2,
-      "description": "精美造型"
-    },
-    {
-      "id": "snack-L3-C-90",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-C-91",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-C-92",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-C-93",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-C-94",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-C-95",
-      "type": "Snack",
-      "name": "三色锦绣",
-      "attributes": {
-        "colors": [
-          "red",
-          "green",
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "集三色之精华"
-    },
-    {
-      "id": "snack-L3-S-96",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
-    },
-    {
-      "id": "snack-L3-S-97",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
-    },
-    {
-      "id": "snack-L3-S-98",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
-    },
-    {
-      "id": "snack-L3-S-99",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
-    },
-    {
-      "id": "snack-L3-S-100",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
-    },
-    {
-      "id": "snack-L3-S-101",
-      "type": "Snack",
-      "name": "千层百态",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle",
-          "square",
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 3,
-      "description": "技艺登峰造极"
+      "description": "双形造型，精美绝伦"
     }
   ],
   "tablewareDeck": [
     {
-      "id": "plate-L1-102",
+      "id": "plate-L1-60",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -1917,7 +1107,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-103",
+      "id": "plate-L1-61",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -1935,7 +1125,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-104",
+      "id": "plate-L1-62",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -1953,7 +1143,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-105",
+      "id": "plate-L1-63",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -1971,7 +1161,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-106",
+      "id": "plate-L1-64",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -1989,7 +1179,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-107",
+      "id": "plate-L1-65",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2007,7 +1197,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-108",
+      "id": "plate-L1-66",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2025,7 +1215,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-109",
+      "id": "plate-L1-67",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2043,7 +1233,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-110",
+      "id": "plate-L1-68",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2061,7 +1251,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-111",
+      "id": "plate-L1-69",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2079,7 +1269,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-112",
+      "id": "plate-L1-70",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2097,7 +1287,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-113",
+      "id": "plate-L1-71",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2115,7 +1305,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-114",
+      "id": "plate-L1-72",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2133,7 +1323,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-115",
+      "id": "plate-L1-73",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2151,7 +1341,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-116",
+      "id": "plate-L1-74",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2169,7 +1359,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-117",
+      "id": "plate-L1-75",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2187,7 +1377,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-118",
+      "id": "plate-L1-76",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2205,7 +1395,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-119",
+      "id": "plate-L1-77",
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
@@ -2223,655 +1413,7 @@
       "description": "基础食器"
     },
     {
-      "id": "plate-L1-120",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-121",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-122",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-123",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-124",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-125",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-126",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-127",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-128",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-129",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-130",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-131",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-132",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-133",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-134",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-135",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-136",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-137",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-138",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-139",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-140",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-141",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-142",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-143",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "red"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-144",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-145",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-146",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-147",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-148",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-149",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "green"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-150",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-151",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "circle"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-152",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-153",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "square"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-154",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "warm"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-155",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": [
-          "yellow"
-        ],
-        "shapes": [
-          "flower"
-        ],
-        "temps": [
-          "cold"
-        ]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L2-C-156",
+      "id": "plate-L2-C-78",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2890,7 +1432,7 @@
       "description": "双色兼容"
     },
     {
-      "id": "plate-L2-C-157",
+      "id": "plate-L2-C-79",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2909,7 +1451,7 @@
       "description": "双色兼容"
     },
     {
-      "id": "plate-L2-C-158",
+      "id": "plate-L2-C-80",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2928,7 +1470,7 @@
       "description": "双色兼容"
     },
     {
-      "id": "plate-L2-C-159",
+      "id": "plate-L2-C-81",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2947,7 +1489,7 @@
       "description": "双色兼容"
     },
     {
-      "id": "plate-L2-S-160",
+      "id": "plate-L2-S-82",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2966,7 +1508,7 @@
       "description": "双形兼容"
     },
     {
-      "id": "plate-L2-S-161",
+      "id": "plate-L2-S-83",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -2985,7 +1527,7 @@
       "description": "双形兼容"
     },
     {
-      "id": "plate-L2-S-162",
+      "id": "plate-L2-S-84",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3004,7 +1546,7 @@
       "description": "双形兼容"
     },
     {
-      "id": "plate-L2-S-163",
+      "id": "plate-L2-S-85",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3023,7 +1565,7 @@
       "description": "双形兼容"
     },
     {
-      "id": "plate-L2-T-164",
+      "id": "plate-L2-T-86",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3042,7 +1584,7 @@
       "description": "全温兼容"
     },
     {
-      "id": "plate-L2-T-165",
+      "id": "plate-L2-T-87",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3061,7 +1603,7 @@
       "description": "全温兼容"
     },
     {
-      "id": "plate-L2-T-166",
+      "id": "plate-L2-T-88",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3080,7 +1622,7 @@
       "description": "全温兼容"
     },
     {
-      "id": "plate-L2-T-167",
+      "id": "plate-L2-T-89",
       "type": "Tableware",
       "name": "细釉盘",
       "attributes": {
@@ -3099,7 +1641,7 @@
       "description": "全温兼容"
     },
     {
-      "id": "plate-L3-C-168",
+      "id": "plate-L3-C-90",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
@@ -3119,7 +1661,7 @@
       "description": "全色兼容"
     },
     {
-      "id": "plate-L3-C-169",
+      "id": "plate-L3-C-91",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
@@ -3139,7 +1681,7 @@
       "description": "全色兼容"
     },
     {
-      "id": "plate-L3-C-170",
+      "id": "plate-L3-C-92",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
@@ -3159,7 +1701,7 @@
       "description": "全色兼容"
     },
     {
-      "id": "plate-L3-S-171",
+      "id": "plate-L3-S-93",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
@@ -3179,7 +1721,7 @@
       "description": "全形兼容"
     },
     {
-      "id": "plate-L3-S-172",
+      "id": "plate-L3-S-94",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
@@ -3199,7 +1741,7 @@
       "description": "全形兼容"
     },
     {
-      "id": "plate-L3-S-173",
+      "id": "plate-L3-S-95",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
