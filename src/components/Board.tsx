@@ -577,7 +577,7 @@ const GameNotification: React.FC<{ notification: any }> = ({ notification }) => 
           {message}
         </div>
 
-        {details && (
+        {details && details.dice && (
           <div className="grid grid-cols-4 gap-3 text-xs mt-2 w-full pt-2 border-t border-white/10">
             <div className="flex flex-col items-center">
               <span className="opacity-50">骰子</span>
