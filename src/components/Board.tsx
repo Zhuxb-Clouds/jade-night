@@ -92,7 +92,7 @@ const CardView: React.FC<{ card: CardType; overlayCard?: CardType; onClick?: () 
       onClick={onClick}
       className={`
         relative w-24 h-36 rounded-lg border shadow-sm m-1 transition-transform hover:scale-105
-        ${isSnack ? "bg-pink-50/90 border-pink-200" : "bg-stone-50/90 border-stone-300"}
+        ${isSnack ? "bg-pink-50/80 border-pink-200" : "bg-stone-50/80 border-stone-300"}
         flex flex-col items-center select-none overflow-hidden
       `}
     >
@@ -166,12 +166,8 @@ const DroppableSlot = ({
   children: React.ReactNode;
   isCurrentPlayer: boolean;
 }) => {
-  // Check if this slot can accept more snacks
-  // Jade Chalice can accept up to 3 snacks
-  // Normal plates can only accept if empty
-  const isJadeChalice = slot.tableware?.name === "玉盏";
-  const jadeCanAccept = isJadeChalice && (!slot.snacks || slot.snacks.length < 3);
-  const canAcceptSnack = jadeCanAccept || (!slot.snack && slot.tableware);
+  // Check if this slot can accept snacks (only if empty and has tableware)
+  const canAcceptSnack = !slot.snack && slot.tableware;
 
   const { setNodeRef, isOver } = useDroppable({
     id: slot.id,
@@ -283,23 +279,6 @@ const PlayerArea: React.FC<{
     // We can make the item draggable by its ID.
 
     const content = (() => {
-      // Check if this is a Jade Chalice with multiple snacks
-      const isJadeChalice = item.tableware?.name === "玉盏";
-
-      if (isJadeChalice && item.snacks && item.snacks.length > 0) {
-        // Jade Chalice with stacked snacks - show count badge
-        return (
-          <div className="relative">
-            <CardView key={item.id} card={item.tableware!} overlayCard={item.snacks[0]} />
-            {item.snacks.length > 1 && (
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
-                {item.snacks.length}
-              </div>
-            )}
-          </div>
-        );
-      }
-
       if (item.tableware && item.snack) {
         return <CardView key={item.id} card={item.tableware} overlayCard={item.snack} />;
       }
@@ -328,6 +307,11 @@ const PlayerArea: React.FC<{
           <div className="flex justify-between items-center mb-2">
             <h3 className={`font-bold ${isCurrentPlayer ? "text-emerald-400" : "text-gray-400"}`}>
               {isCurrentPlayer ? "My Area" : `Player ${playerId}`}
+              {playerState.hasJadeChalice && (
+                <span className="ml-2 text-amber-400" title="玉盏持有者 - 奉献分×2">
+                  🏆
+                </span>
+              )}
             </h3>
             <div className="text-xs text-gray-500">
               <span className="mr-2">AP: {playerState.actionPoints}</span>
@@ -364,16 +348,37 @@ const PlayerArea: React.FC<{
             {/* Personal Area - Taste */}
             {isCurrentPlayer ? (
               <DroppablePersonalArea isCurrentPlayer={isCurrentPlayer}>
-                {playerState.personalArea.map((item: WaitingItem) => (
-                  <div key={item.id}>{renderWaitingItem(item, false)}</div>
-                ))}
+                <div className="flex flex-wrap">
+                  {playerState.personalArea.map((item: WaitingItem, index: number) => (
+                    <div
+                      key={item.id}
+                      className="transition-transform hover:z-10 hover:scale-105"
+                      style={{
+                        marginLeft:
+                          index > 0 && playerState.personalArea.length > 3 ? "-2rem" : "0",
+                        zIndex: index,
+                      }}
+                    >
+                      {renderWaitingItem(item, false)}
+                    </div>
+                  ))}
+                </div>
               </DroppablePersonalArea>
             ) : (
               <div className="flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed border-gray-700">
                 <div className="text-xs text-gray-500 mb-1">Personal Area (Max 5)</div>
                 <div className="flex flex-wrap">
-                  {playerState.personalArea.map((item: WaitingItem) => (
-                    <div key={item.id}>{renderWaitingItem(item, false)}</div>
+                  {playerState.personalArea.map((item: WaitingItem, index: number) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        marginLeft:
+                          index > 0 && playerState.personalArea.length > 3 ? "-2rem" : "0",
+                        zIndex: index,
+                      }}
+                    >
+                      {renderWaitingItem(item, false)}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -382,16 +387,37 @@ const PlayerArea: React.FC<{
             {/* Offering Area */}
             {isCurrentPlayer ? (
               <DroppableOfferingArea isCurrentPlayer={isCurrentPlayer}>
-                {playerState.offeringArea.map((item: WaitingItem) => (
-                  <div key={item.id}>{renderWaitingItem(item, false)}</div>
-                ))}
+                <div className="flex flex-wrap">
+                  {playerState.offeringArea.map((item: WaitingItem, index: number) => (
+                    <div
+                      key={item.id}
+                      className="transition-transform hover:z-10 hover:scale-105"
+                      style={{
+                        marginLeft:
+                          index > 0 && playerState.offeringArea.length > 3 ? "-2rem" : "0",
+                        zIndex: index,
+                      }}
+                    >
+                      {renderWaitingItem(item, false)}
+                    </div>
+                  ))}
+                </div>
               </DroppableOfferingArea>
             ) : (
               <div className="flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed border-gray-700">
                 <div className="text-xs text-gray-500 mb-1">Offering Area (Max 5)</div>
                 <div className="flex flex-wrap">
-                  {playerState.offeringArea.map((item: WaitingItem) => (
-                    <div key={item.id}>{renderWaitingItem(item, false)}</div>
+                  {playerState.offeringArea.map((item: WaitingItem, index: number) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        marginLeft:
+                          index > 0 && playerState.offeringArea.length > 3 ? "-2rem" : "0",
+                        zIndex: index,
+                      }}
+                    >
+                      {renderWaitingItem(item, false)}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -455,16 +481,17 @@ const GrandmotherStatus: React.FC<{
   // 使用传入的 jadeGiven 标志
   const jadeDistributed = jadeGiven;
 
-  // Check L3 plates remaining in reward deck
-  const l3PlatesRemaining = rewardDeck.filter((c: any) => c.level === 3).length;
-  const allL3Distributed = l3PlatesRemaining === 0;
+  // Check L2 plates remaining in reward deck
+  const l2PlatesRemaining = rewardDeck.filter((c: any) => c.level === 2).length;
+  const allL2Distributed = l2PlatesRemaining === 0;
 
-  // Game end condition check
-  const endConditionMet = jadeDistributed && allL3Distributed;
+  // Game end condition check: 满足其一即可
+  const endConditionMet = jadeDistributed || allL2Distributed;
 
-  // 敬茶条件检查
-  const canServeTea =
-    !jadeGiven && myOfferingCount >= 4 && myTeaTokens >= 3 && isMyTurn && myAP > 0;
+  // 敬茶条件检查: 需要茶券 >= (9 - 奉献数)
+  const baseCost = 9;
+  const actualCost = Math.max(0, baseCost - myOfferingCount);
+  const canServeTea = !jadeGiven && myTeaTokens >= actualCost && isMyTurn && myAP > 0;
 
   return (
     <div className="w-64 bg-stone-900 border-r border-stone-800 p-6 flex flex-col gap-6 text-stone-200 shadow-2xl z-20 shrink-0">
@@ -482,7 +509,7 @@ const GrandmotherStatus: React.FC<{
         {/* Game End Conditions */}
         <div className="space-y-2">
           <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-            游戏结束条件
+            游戏结束条件 (满足其一)
           </div>
           <div
             className={`flex items-center gap-2 p-2 rounded border ${
@@ -498,15 +525,15 @@ const GrandmotherStatus: React.FC<{
           </div>
           <div
             className={`flex items-center gap-2 p-2 rounded border ${
-              allL3Distributed
+              allL2Distributed
                 ? "bg-emerald-900/30 border-emerald-700 text-emerald-300"
                 : "bg-stone-800 border-stone-700 text-stone-400"
             }`}
           >
-            <span className={allL3Distributed ? "text-emerald-400" : "text-stone-600"}>
-              {allL3Distributed ? "✓" : "○"}
+            <span className={allL2Distributed ? "text-emerald-400" : "text-stone-600"}>
+              {allL2Distributed ? "✓" : "○"}
             </span>
-            <span className="text-sm">L3盘子已发完 ({l3PlatesRemaining}剩余)</span>
+            <span className="text-sm">L2盘子已发完 ({l2PlatesRemaining}剩余)</span>
           </div>
         </div>
 
@@ -533,9 +560,10 @@ const GrandmotherStatus: React.FC<{
           奉献规则
         </div>
         <div className="text-stone-400/80 space-y-1">
-          <div>• 配对分≥1才能奉献</div>
-          <div>• 配对分≥2额外获得1茶券</div>
+          <div>• 配对分≥2才能奉献</div>
+          <div>• 配对分≥3额外获得1茶券</div>
           <div>• L1→L2, L2→L3, L3→2茶券</div>
+          <div>• 玉盏持有者奉献分×2</div>
         </div>
       </div>
 
@@ -621,8 +649,10 @@ const ServeTeaButton: React.FC<{
 }> = ({ canServeTea, myOfferingCount, myTeaTokens, jadeGiven, isMyTurn, onServeTea }) => {
   if (jadeGiven) return null; // 玉盏已发放，不显示按钮
 
-  const meetsOfferingReq = myOfferingCount >= 4;
-  const meetsTeaReq = myTeaTokens >= 3;
+  // 计算实际需要的茶券数量：基础9个，每1个奉献减少1个
+  const baseCost = 9;
+  const actualCost = Math.max(0, baseCost - myOfferingCount);
+  const meetsTeaReq = myTeaTokens >= actualCost;
 
   return (
     <div className="bg-gradient-to-r from-amber-900/30 to-stone-800/50 border border-amber-700/50 rounded-lg p-4 mt-4">
@@ -632,13 +662,15 @@ const ServeTeaButton: React.FC<{
       </div>
 
       <div className="space-y-2 mb-3">
-        <div
-          className={`flex items-center gap-2 text-sm ${
-            meetsOfferingReq ? "text-emerald-400" : "text-stone-400"
-          }`}
-        >
-          <span>{meetsOfferingReq ? "✓" : "○"}</span>
-          <span>奉献区至少4盘 ({myOfferingCount}/4)</span>
+        <div className="flex items-center gap-2 text-sm text-stone-400">
+          <span>ℹ️</span>
+          <span>基础9茶券，奉献每盘减1</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-stone-300">
+          <span>🍵</span>
+          <span>
+            奉献{myOfferingCount}盘 → 需{actualCost}茶券
+          </span>
         </div>
         <div
           className={`flex items-center gap-2 text-sm ${
@@ -646,7 +678,13 @@ const ServeTeaButton: React.FC<{
           }`}
         >
           <span>{meetsTeaReq ? "✓" : "○"}</span>
-          <span>消耗3枚茶券 ({myTeaTokens}/3)</span>
+          <span>
+            当前茶券: {myTeaTokens} / 需要: {actualCost}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-amber-300">
+          <span>✨</span>
+          <span>获得后奉献分×2</span>
         </div>
       </div>
 
@@ -806,18 +844,20 @@ export const Board: React.FC = () => {
       return (
         <div
           key={slot.id}
-          className="relative w-24 h-32 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
+          className="relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
         >
           {slot.tableware && (
-            <div className="absolute opacity-50 pointer-events-none transform scale-90">
+            <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
               <CardView card={slot.tableware} />
             </div>
           )}
-          {isMyTurn && myAP > 0 ? (
-            <DraggableCard card={slot.snack} />
-          ) : (
-            <CardView card={slot.snack} />
-          )}
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isMyTurn && myAP > 0 ? (
+              <DraggableCard card={slot.snack} />
+            ) : (
+              <CardView card={slot.snack} />
+            )}
+          </div>
         </div>
       );
     } else if (slot.tableware) {
@@ -825,7 +865,7 @@ export const Board: React.FC = () => {
       return (
         <div
           key={slot.id}
-          className="relative w-24 h-32 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
+          className="relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
         >
           {isMyTurn && myAP > 0 ? (
             <DraggableCard card={slot.tableware} />
@@ -839,7 +879,7 @@ export const Board: React.FC = () => {
       return (
         <div
           key={slot.id}
-          className="w-24 h-32 bg-gray-800/20 rounded border border-gray-700 flex items-center justify-center"
+          className="w-28 h-40 bg-gray-800/20 rounded border border-gray-700 flex items-center justify-center"
         >
           <span className="text-xs text-gray-600">Empty</span>
         </div>
@@ -970,9 +1010,9 @@ export const Board: React.FC = () => {
               ) : (
                 <div className="w-full">
                   <div className="text-center text-gray-400 text-sm mb-2">
-                    Public Area (8 Slots)
+                    Public Area (九宫格 3×3)
                   </div>
-                  <div className="flex flex-wrap justify-center gap-2">
+                  <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
                     {G.publicArea.map((slot: PublicSlot) => renderPublicSlot(slot))}
                   </div>
                 </div>

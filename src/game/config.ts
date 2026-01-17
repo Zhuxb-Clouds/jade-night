@@ -57,6 +57,7 @@ export interface PlayerState {
   teaTokens: number; // Tea tokens earned from personal area snacks
   teaTokenUsedThisTurn: boolean; // Whether tea token has been used this turn
   tasteDoneThisTurn: boolean; // 每回合只能品鉴一次
+  hasJadeChalice: boolean; // 是否持有玉盏
 }
 
 export interface NotificationState {
@@ -81,6 +82,7 @@ export interface JadeNightState {
   isGameStarted: boolean;
   notification: NotificationState | null;
   jadeGiven: boolean; // 玉盏是否已被发放
+  endConditionTriggeredAtRound: number | null; // 结束条件触发时的回合数，用于公平轮判定
 }
 
 // --- Helpers ---
@@ -92,7 +94,7 @@ export const getGameThresholds = (numPlayers: number) => {
 };
 
 // Load decks from pre-generated JSON file
-const getDecks = (): { snackDeck: Card[]; tablewareDeck: Card[] } => {
+export const getDecks = (): { snackDeck: Card[]; tablewareDeck: Card[] } => {
   return {
     snackDeck: decksData.snackDeck as Card[],
     tablewareDeck: decksData.tablewareDeck as Card[],
@@ -104,7 +106,7 @@ const getDecks = (): { snackDeck: Card[]; tablewareDeck: Card[] } => {
 // Calculate score for a single snack pairing
 // 规则：盘子上的每一个'圈'若被'点'填满，每个填满的圈产生1点配对分
 // 例如：双色盘[红+绿]配双色点心[红+绿]，颜色维度得2分
-const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
+export const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
   const p = tableware.attributes;
   const s = snack.attributes;
 
@@ -128,7 +130,7 @@ const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
   return score;
 };
 
-const calculatePairingScore = (item: WaitingItem): number => {
+export const calculatePairingScore = (item: WaitingItem): number => {
   if (!item.tableware) return 0;
 
   // Check if this is a Jade Chalice with multiple snacks
@@ -154,26 +156,30 @@ const calculatePairingScore = (item: WaitingItem): number => {
   return calculateSinglePairingScore(item.tableware, item.snack);
 };
 
-const calculateFinalScore = (player: PlayerState) => {
+export const calculateFinalScore = (player: PlayerState) => {
   // S = Sum(P_ind) + C_off - C_wait * 2
   // 文档公式：个人区配对分 + 奉献区数量 - 滞留惩罚
+  // 如果有玉盏，则C_off*2
 
   // 1. Personal Area Scores (pairing scores)
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
   // 2. Offering Area Count (只计数量，不计配对分)
-  const c_off = player.offeringArea.length;
+  let c_off = player.offeringArea.length;
+  // 玉盏持有者奉献分翻倍
+  if (player.hasJadeChalice) {
+    c_off = c_off * 2;
+  }
 
   // 3. Waiting Area Penalty (C_wait) - 只计算有点心的盘子
   const c_wait = player.waitingArea.filter((item) => {
-    const isJadeChalice = item.tableware?.name === "玉盏";
-    return isJadeChalice ? item.snacks && item.snacks.length > 0 : !!item.snack;
+    return !!item.snack;
   }).length;
 
   // 公式: S = Sum(P_ind) + C_off - C_wait * 2
   const totalScore = sumP_ind + c_off - c_wait * 2;
 
-  return { totalScore, sumP_ind, c_off, c_wait };
+  return { totalScore, sumP_ind, c_off, c_wait, hasJadeChalice: player.hasJadeChalice };
 };
 
 export const JadeNightGame: Game<JadeNightState> = {
@@ -200,12 +206,13 @@ export const JadeNightGame: Game<JadeNightState> = {
         teaTokens: 0,
         teaTokenUsedThisTurn: false,
         tasteDoneThisTurn: false,
+        hasJadeChalice: false,
       };
     }
 
-    // Initialize 5 public slots (文档规定5个槽位)
+    // Initialize 9 public slots (九宫格排列)
     const publicArea: PublicSlot[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 9; i++) {
       publicArea.push({ id: `public-slot-${i}` });
     }
 
@@ -218,6 +225,7 @@ export const JadeNightGame: Game<JadeNightState> = {
       isGameStarted: false,
       notification: null,
       jadeGiven: false,
+      endConditionTriggeredAtRound: null,
     };
   },
 
@@ -242,23 +250,41 @@ export const JadeNightGame: Game<JadeNightState> = {
         player.teaTokenUsedThisTurn = false; // Reset tea token usage for new turn
         player.tasteDoneThisTurn = false; // 重置每回合品鉴限制
       }
+
+      // 检查结束条件是否触发，如果是则记录当前回合数
+      if (G.endConditionTriggeredAtRound === null) {
+        const jadeDistributed = G.jadeGiven;
+        const l2PlatesRemaining = G.rewardDeck.filter((c) => c.level === 2).length;
+        const allL2Distributed = l2PlatesRemaining === 0;
+        const endConditionMet = jadeDistributed || allL2Distributed;
+
+        if (endConditionMet) {
+          // 记录结束条件触发时的回合数
+          G.endConditionTriggeredAtRound = ctx.turn;
+        }
+      }
     },
   },
 
   endIf: ({ G, ctx }) => {
-    // 使用 jadeGiven 标志检查玉盏是否已发放
-    const jadeDistributed = G.jadeGiven;
+    // 公平轮逻辑：结束条件触发后，需要完成当前轮次（所有玩家都行动一次）后才结束游戏
+    // endConditionTriggeredAtRound 记录了条件触发时的回合数
 
-    // Check if all L3 plates have been distributed (none left in reward deck)
-    const l3PlatesRemaining = G.rewardDeck.filter((c) => c.level === 3).length;
-    const allL3Distributed = l3PlatesRemaining === 0;
+    if (G.endConditionTriggeredAtRound === null) {
+      // 结束条件尚未触发，游戏继续
+      return;
+    }
 
-    // Game ends when both Jade Chalice and all L3 plates are distributed,
-    // and we complete a fair round (back to player 0)
-    const endConditionMet = jadeDistributed && allL3Distributed;
+    // 计算玩家数量
+    const numPlayers = Object.keys(G.players).length;
+
+    // 结束条件已触发，检查是否完成了公平轮
+    // 公平轮：从触发时刻开始，每个玩家再行动一次后，回到玩家0时结束
     const isStartOfRound = ctx.currentPlayer === "0";
+    const turnsAfterTrigger = ctx.turn - G.endConditionTriggeredAtRound;
 
-    if (endConditionMet && isStartOfRound) {
+    // 需要至少经过一轮（numPlayers个回合）才能结束
+    if (isStartOfRound && turnsAfterTrigger >= numPlayers) {
       // Calculate scores
       const scores: Record<string, any> = {};
       let maxScore = -Infinity;
@@ -451,10 +477,85 @@ export const JadeNightGame: Game<JadeNightState> = {
         slot.tableware = undefined;
       }
 
-      // Refresh slot if empty
+      // 惜食机制：九宫格 (3x3) 检查同排/同列
+      // 槽位索引 0-8 对应九宫格:
+      // 0 1 2
+      // 3 4 5
+      // 6 7 8
+      if (isSnack) {
+        const row = Math.floor(slotIndex / 3); // 0, 1, 2
+        const col = slotIndex % 3; // 0, 1, 2
+
+        // 获取同行和同列的槽位索引
+        const rowIndices = [row * 3, row * 3 + 1, row * 3 + 2];
+        const colIndices = [col, col + 3, col + 6];
+
+        // 检查同行是否还有点心
+        const rowHasSnacks = rowIndices.some((idx) => G.publicArea[idx]?.snack);
+        // 检查同列是否还有点心
+        const colHasSnacks = colIndices.some((idx) => G.publicArea[idx]?.snack);
+
+        let teaTokensEarned = 0;
+        let needsRowRefresh = false;
+        let needsColRefresh = false;
+
+        // 如果同行没有点心了，获得茶券并刷新
+        if (!rowHasSnacks) {
+          teaTokensEarned += 1;
+          needsRowRefresh = true;
+        }
+        // 如果同列没有点心了，获得茶券并刷新
+        if (!colHasSnacks) {
+          teaTokensEarned += 1;
+          needsColRefresh = true;
+        }
+
+        if (teaTokensEarned > 0) {
+          player.teaTokens += teaTokensEarned;
+        }
+
+        // 刷新同行/同列的点心和盘子
+        const indicesToRefresh = new Set<number>();
+        if (needsRowRefresh) {
+          rowIndices.forEach((idx) => indicesToRefresh.add(idx));
+        }
+        if (needsColRefresh) {
+          colIndices.forEach((idx) => indicesToRefresh.add(idx));
+        }
+
+        indicesToRefresh.forEach((idx) => {
+          const targetSlot = G.publicArea[idx];
+          if (targetSlot) {
+            // 刷新盘子：L1用完用L2作为基底
+            if (!targetSlot.tableware) {
+              if (G.tablewareDeck.length > 0) {
+                targetSlot.tableware = G.tablewareDeck.shift();
+              } else {
+                // L1用完，从L2拿取
+                const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
+                if (l2Index !== -1) {
+                  targetSlot.tableware = G.rewardDeck.splice(l2Index, 1)[0];
+                }
+              }
+            }
+            // 刷新点心
+            if (targetSlot.tableware && !targetSlot.snack && G.snackDeck.length > 0) {
+              targetSlot.snack = G.snackDeck.shift();
+            }
+          }
+        });
+      }
+
+      // Refresh slot if empty (食器和点心都被拿走)
       if (!slot.snack && !slot.tableware) {
+        // L1用完用L2作为基底
         if (G.tablewareDeck.length > 0) {
           slot.tableware = G.tablewareDeck.shift();
+        } else {
+          const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
+          if (l2Index !== -1) {
+            slot.tableware = G.rewardDeck.splice(l2Index, 1)[0];
+          }
         }
         // Only add snack if there's a plate to put it on
         if (slot.tableware && G.snackDeck.length > 0) {
@@ -517,9 +618,9 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       if (!item.tableware || !hasSnack) return INVALID_MOVE;
 
-      // 文档规定：奉献的点心的配对分至少要>=1点
+      // 文档规定：奉献的点心的配对分至少要>=2点
       const pairingScore = calculatePairingScore(item);
-      if (pairingScore < 1) return INVALID_MOVE;
+      if (pairingScore < 2) return INVALID_MOVE;
 
       const currentLevel = item.tableware.level;
 
@@ -531,10 +632,10 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       let rewardMessage = "";
 
-      // 文档规定：若奉献的点心配对分>=2点，则额外获得一枚茶券
-      if (pairingScore >= 2) {
+      // 文档规定：若奉献的点心配对分>=3点，则额外获得一枚茶券
+      if (pairingScore >= 3) {
         player.teaTokens += 1;
-        rewardMessage += "配对分≥2，额外获得1枚茶券！";
+        rewardMessage += "配对分≥3，额外获得1枚茶券！";
       }
 
       // 奖励逻辑：根据食器等级获得升级
@@ -584,7 +685,8 @@ export const JadeNightGame: Game<JadeNightState> = {
     },
 
     // 敬茶：获取玉盏的唯一方式
-    // 条件：1. 奉献区拥有至少4个盘子 2. 消耗3枚茶券
+    // 条件：消耗9个茶券，奉献区每1盘减少1个茶券
+    // 玉盏不占用区域，只作为标识物
     serveTea: ({ G, ctx, events }) => {
       const player = G.players[ctx.currentPlayer];
       if (player.actionPoints <= 0) return INVALID_MOVE;
@@ -592,43 +694,26 @@ export const JadeNightGame: Game<JadeNightState> = {
       // 检查玉盏是否已被发放
       if (G.jadeGiven) return INVALID_MOVE;
 
-      // 检查资历门槛：奉献区至少4个盘子
-      if (player.offeringArea.length < 4) return INVALID_MOVE;
+      // 计算实际需要的茶券数量：基础9个，每1个奉献减少1个
+      const baseCost = 9;
+      const discount = player.offeringArea.length;
+      const actualCost = Math.max(0, baseCost - discount);
 
-      // 检查茶券：需要3枚
-      if (player.teaTokens < 3) return INVALID_MOVE;
+      // 检查茶券是否足够
+      if (player.teaTokens < actualCost) return INVALID_MOVE;
 
       // 消耗茶券
-      player.teaTokens -= 3;
+      player.teaTokens -= actualCost;
       player.actionPoints -= 1;
 
-      // 发放玉盏
-      const jadeChalice: Card = {
-        id: `jade-chalice-${Date.now()}`,
-        type: "Tableware",
-        name: "玉盏",
-        attributes: {
-          colors: Object.values(CardColor),
-          shapes: Object.values(CardShape),
-          temps: Object.values(CardTemp),
-        },
-        level: 4, // Legendary
-        description: "玉盏 - 可堆叠三盘点心，同一配对分只计一次",
-      };
-
-      player.waitingArea.push({
-        id: `jade-card-${Date.now()}`,
-        tableware: jadeChalice,
-        snack: undefined,
-        snacks: [],
-      });
-
+      // 玉盏只作为标识物，不占用等待区/个人区/奉献区
+      player.hasJadeChalice = true;
       G.jadeGiven = true;
 
       G.notification = {
         type: "offering",
-        message: "敬茶成功！获得【玉盏】！可在其上堆叠三盘点心。",
-        details: null,
+        message: "敬茶成功！获得【玉盏】！奉献区分数将翻倍计算。",
+        details: { actualCost },
         timestamp: Date.now(),
       };
 

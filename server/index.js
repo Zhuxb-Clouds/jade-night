@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // 日志目录
-const LOGS_DIR = path.join(__dirname, "game_logs");
+const LOGS_DIR = path.join(__dirname, "../game_logs");
 
 // 确保日志目录存在
 if (!fs.existsSync(LOGS_DIR)) {
