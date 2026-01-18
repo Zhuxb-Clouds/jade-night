@@ -106,7 +106,7 @@ jobs:
               msg_type: "post",
               content: {
                 title: "[Github Action]部署通知",
-                project: "- **项目名**: game-admin-panel",
+                project: "- **项目名**: jade-night",
                 build_status: "- **构建状态**: \($build_status)",  # 新增构建状态字段
                 deploy_status: "- **部署状态**: \($deploy_status)",  # 新增部署状态字段
                 branch: "- **分支**: \($branch)",

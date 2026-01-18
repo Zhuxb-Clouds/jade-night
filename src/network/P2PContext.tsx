@@ -68,6 +68,12 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const data = JSON.parse(event.data);
 
+        // 处理心跳请求
+        if (data.type === "PING") {
+          ws.send(JSON.stringify({ type: "PONG" }));
+          return;
+        }
+
         switch (data.type) {
           case "HOSTED":
             setConnectedPlayerCount(1);
@@ -162,7 +168,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           JSON.stringify({
             type: "HOST_GAME",
             roomId: newRoomId,
-          })
+          }),
         );
 
         // Initialize Boardgame.io Client (Master) with max players
@@ -178,7 +184,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               JSON.stringify({
                 type: "STATE",
                 state,
-              })
+              }),
             );
           }
         });
@@ -202,7 +208,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           JSON.stringify({
             type: "JOIN_GAME",
             roomId: roomIdToJoin,
-          })
+          }),
         );
       }
     }, 100);
@@ -224,7 +230,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             type: "MOVE",
             moveName,
             args,
-          })
+          }),
         );
       }
     }

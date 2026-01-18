@@ -121,13 +121,45 @@ const port = 9000;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+// 心跳配置
+const HEARTBEAT_INTERVAL = 30000; // 30秒发送一次心跳
+const MAX_MISSED_HEARTBEATS = 20; // 最大允许失活次数
+
+// 心跳检测
+function heartbeat() {
+  this.isAlive = true;
+  this.missedHeartbeats = 0;
+}
+
+// 启动心跳检测定时器
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      ws.missedHeartbeats = (ws.missedHeartbeats || 0) + 1;
+      console.log(`Client missed heartbeat: ${ws.missedHeartbeats}/${MAX_MISSED_HEARTBEATS}`);
+
+      if (ws.missedHeartbeats >= MAX_MISSED_HEARTBEATS) {
+        console.log(`Client exceeded max missed heartbeats, terminating connection`);
+        return ws.terminate();
+      }
+    }
+
+    ws.isAlive = false;
+    ws.send(JSON.stringify({ type: "PING" }));
+  });
+}, HEARTBEAT_INTERVAL);
+
+wss.on("close", () => {
+  clearInterval(heartbeatInterval);
+});
+
 // Add CORS middleware for HTTP requests
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
   );
 
   // Handle preflight requests
@@ -157,9 +189,22 @@ wss.on("connection", (ws) => {
   console.log("Client connected");
   let clientRoom = null;
 
+  // 初始化心跳状态
+  ws.isAlive = true;
+  ws.missedHeartbeats = 0;
+  ws.on("pong", heartbeat);
+
   ws.on("message", (message) => {
     try {
       const data = JSON.parse(message);
+
+      // 处理心跳响应
+      if (data.type === "PONG") {
+        ws.isAlive = true;
+        ws.missedHeartbeats = 0;
+        return;
+      }
+
       console.log("Received:", data.type);
 
       switch (data.type) {
@@ -209,7 +254,7 @@ wss.on("connection", (ws) => {
                   JSON.stringify({
                     type: "STATE",
                     state: room.gameState,
-                  })
+                  }),
                 );
               }
 
@@ -219,7 +264,7 @@ wss.on("connection", (ws) => {
                   roomId,
                   playerId,
                   playerCount: room.players.length,
-                })
+                }),
               );
               console.log(`Player ${playerId} joined room: ${roomId}`);
             } else {
@@ -309,16 +354,23 @@ wss.on("connection", (ws) => {
         // 记录玩家离开
         room.logger.logPlayerLeave(ws.playerId, room.players.length);
 
-        const broadcastData = JSON.stringify({
-          type: "PLAYER_LEFT",
-          playerCount: room.players.length,
-        });
+        // 如果房间没有玩家了，删除房间
+        if (room.players.length === 0) {
+          room.logger.log({ event: "ROOM_EMPTY", reason: "All players left" });
+          rooms.delete(clientRoom);
+          console.log(`Room deleted (empty): ${clientRoom}`);
+        } else {
+          const broadcastData = JSON.stringify({
+            type: "PLAYER_LEFT",
+            playerCount: room.players.length,
+          });
 
-        room.players.forEach((player) => {
-          if (player.readyState === 1) {
-            player.send(broadcastData);
-          }
-        });
+          room.players.forEach((player) => {
+            if (player.readyState === 1) {
+              player.send(broadcastData);
+            }
+          });
+        }
       }
     }
   });
