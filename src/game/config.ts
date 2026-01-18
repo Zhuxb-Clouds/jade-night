@@ -38,7 +38,7 @@ export interface Card {
 
 export interface PublicSlot {
   id: string;
-  snack?: Card;
+  snack?: Card; // 公共区只有点心槽位，盘子从单独的抽取堆获取
 }
 
 export interface WaitingItem {
@@ -194,9 +194,9 @@ export const JadeNightGame: Game<JadeNightState> = {
       };
     }
 
-    // Initialize 9 public slots (九宫格排列)
+    // Initialize 5 public slots (文档规定：公共区牌列设置为5个槽位)
     const publicArea: PublicSlot[] = [];
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 5; i++) {
       publicArea.push({ id: `public-slot-${i}` });
     }
 
@@ -373,150 +373,43 @@ export const JadeNightGame: Game<JadeNightState> = {
       G.isGameStarted = true;
     },
 
-    // Take snack from public area (5 slots with snacks only)
-    takeCard: (
+    // 从公共区拿取点心 (1 AP)
+    // 文档规定：从公共区拿取一张点心，放置在等待区中有空位的食器上
+    takeSnack: (
       { G, playerID, events },
-      { cardId, targetSlotId }: { cardId: string; targetSlotId: string }
+      { snackId, targetSlotId }: { snackId: string; targetSlotId: string },
     ) => {
       const pid = playerID || "0";
       const player = G.players[pid];
 
+      if (player.actionPoints <= 0) return INVALID_MOVE;
+
+      // 等待区上限为5
+      if (player.waitingArea.length >= 5) return INVALID_MOVE;
+
       // Find snack in public area
-      const slotIndex = G.publicArea.findIndex((s) => s.snack?.id === cardId);
+      const slotIndex = G.publicArea.findIndex((s) => s.snack?.id === snackId);
       if (slotIndex === -1) return INVALID_MOVE;
       const slot = G.publicArea[slotIndex];
 
       const snack = slot.snack;
       if (!snack) return INVALID_MOVE;
 
-      // Logic: Must take Snack first if present
-      if (slot.snack && slot.snack.id === cardId) {
-        card = slot.snack;
-        isSnack = true;
-      } else if (!slot.snack && slot.tableware && slot.tableware.id === cardId) {
-        card = slot.tableware;
-        isSnack = false;
-      } else {
-        // Trying to take Tableware while Snack is present
-        return INVALID_MOVE;
-      }
-
-      if (!card) return INVALID_MOVE;
-
-      if (player.actionPoints <= 0) return INVALID_MOVE;
-
-      // Snack must be placed on an existing plate in waiting area
+      // 点心必须放置在等待区中有空位的食器上
       const waitingSlot = player.waitingArea.find((s) => s.id === targetSlotId);
       if (!waitingSlot) return INVALID_MOVE;
+      if (!waitingSlot.tableware) return INVALID_MOVE; // 必须有食器
+      if (waitingSlot.snack) return INVALID_MOVE; // 食器上不能已有点心
 
-        if (isSnack && waitingSlot.tableware) {
-          // Normal plate: can only have one snack
-          if (waitingSlot.snack) return INVALID_MOVE;
-          waitingSlot.snack = card;
-        } else {
-          return INVALID_MOVE;
-        }
-      } else {
-        // Placing in new slot
-        // Constraint: Snack CANNOT be placed in new slot (must go to existing plate)
-        if (isSnack) return INVALID_MOVE;
-
+      // 放置点心
       waitingSlot.snack = snack;
 
       // Remove snack from public slot
       slot.snack = undefined;
 
-      // Remove from public slot
-      if (isSnack) {
-        slot.snack = undefined;
-      } else {
-        slot.tableware = undefined;
-      }
-
-      // 惜食机制：九宫格 (3x3) 检查同排/同列
-      // 槽位索引 0-8 对应九宫格:
-      // 0 1 2
-      // 3 4 5
-      // 6 7 8
-      if (isSnack) {
-        const row = Math.floor(slotIndex / 3); // 0, 1, 2
-        const col = slotIndex % 3; // 0, 1, 2
-
-        // 获取同行和同列的槽位索引
-        const rowIndices = [row * 3, row * 3 + 1, row * 3 + 2];
-        const colIndices = [col, col + 3, col + 6];
-
-        // 检查同行是否还有点心
-        const rowHasSnacks = rowIndices.some((idx) => G.publicArea[idx]?.snack);
-        // 检查同列是否还有点心
-        const colHasSnacks = colIndices.some((idx) => G.publicArea[idx]?.snack);
-
-        let teaTokensEarned = 0;
-        let needsRowRefresh = false;
-        let needsColRefresh = false;
-
-        // 如果同行没有点心了，获得茶券并刷新
-        if (!rowHasSnacks) {
-          teaTokensEarned += 1;
-          needsRowRefresh = true;
-        }
-        // 如果同列没有点心了，获得茶券并刷新
-        if (!colHasSnacks) {
-          teaTokensEarned += 1;
-          needsColRefresh = true;
-        }
-
-        if (teaTokensEarned > 0) {
-          player.teaTokens += teaTokensEarned;
-        }
-
-        // 刷新同行/同列的点心和盘子
-        const indicesToRefresh = new Set<number>();
-        if (needsRowRefresh) {
-          rowIndices.forEach((idx) => indicesToRefresh.add(idx));
-        }
-        if (needsColRefresh) {
-          colIndices.forEach((idx) => indicesToRefresh.add(idx));
-        }
-
-        indicesToRefresh.forEach((idx) => {
-          const targetSlot = G.publicArea[idx];
-          if (targetSlot) {
-            // 刷新盘子：L1用完用L2作为基底
-            if (!targetSlot.tableware) {
-              if (G.tablewareDeck.length > 0) {
-                targetSlot.tableware = G.tablewareDeck.shift();
-              } else {
-                // L1用完，从L2拿取
-                const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
-                if (l2Index !== -1) {
-                  targetSlot.tableware = G.rewardDeck.splice(l2Index, 1)[0];
-                }
-              }
-            }
-            // 刷新点心
-            if (targetSlot.tableware && !targetSlot.snack && G.snackDeck.length > 0) {
-              targetSlot.snack = G.snackDeck.shift();
-            }
-          }
-        });
-      }
-
-      // Refresh slot if empty (食器和点心都被拿走)
-      if (!slot.snack && !slot.tableware) {
-        // L1用完用L2作为基底
-        if (G.tablewareDeck.length > 0) {
-          slot.tableware = G.tablewareDeck.shift();
-        } else {
-          const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
-          if (l2Index !== -1) {
-            slot.tableware = G.rewardDeck.splice(l2Index, 1)[0];
-          }
-        }
-        // Only add snack if there's a plate to put it on
-        if (slot.tableware && G.snackDeck.length > 0) {
-          slot.snack = G.snackDeck.shift();
-        }
+      // 立即从牌堆补充点心
+      if (G.snackDeck.length > 0) {
+        slot.snack = G.snackDeck.shift();
       }
 
       // Deduct AP
@@ -526,6 +419,73 @@ export const JadeNightGame: Game<JadeNightState> = {
       if (player.actionPoints <= 0) {
         events.endTurn();
       }
+    },
+
+    // 从公共区抽取食器 (1 AP)
+    // 文档规定：公共区域还有一个抽取盘子的槽位，先抽取L1,L1消耗完后抽取L2
+    takeTableware: ({ G, playerID, events }) => {
+      const pid = playerID || "0";
+      const player = G.players[pid];
+
+      if (player.actionPoints <= 0) return INVALID_MOVE;
+
+      // 等待区上限为5
+      if (player.waitingArea.length >= 5) return INVALID_MOVE;
+
+      // 先从L1牌堆抽取，L1消耗完后从奖励牌堆抽取L2
+      let tableware: Card | undefined;
+      if (G.tablewareDeck.length > 0) {
+        tableware = G.tablewareDeck.shift();
+      } else {
+        // L1用完，抽取L2
+        const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
+        if (l2Index !== -1) {
+          tableware = G.rewardDeck.splice(l2Index, 1)[0];
+        }
+      }
+
+      if (!tableware) return INVALID_MOVE; // 没有可用的盘子
+
+      // 放入等待区
+      player.waitingArea.push({
+        id: `tableware-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        tableware: tableware,
+        snack: undefined,
+      });
+
+      // Deduct AP
+      player.actionPoints -= 1;
+
+      // End turn if no AP
+      if (player.actionPoints <= 0) {
+        events.endTurn();
+      }
+    },
+
+    // 调整等待区点心位置 (0 AP)
+    // 文档规定：在你的回合，你可以任意调整等待区点心的位置，不消耗AP
+    adjustSnack: (
+      { G, playerID },
+      { fromSlotId, toSlotId }: { fromSlotId: string; toSlotId: string },
+    ) => {
+      const pid = playerID || "0";
+      const player = G.players[pid];
+
+      if (fromSlotId === toSlotId) return INVALID_MOVE;
+
+      const fromSlot = player.waitingArea.find((s) => s.id === fromSlotId);
+      const toSlot = player.waitingArea.find((s) => s.id === toSlotId);
+
+      if (!fromSlot || !toSlot) return INVALID_MOVE;
+      if (!fromSlot.snack) return INVALID_MOVE; // 源槽位必须有点心
+      if (!toSlot.tableware) return INVALID_MOVE; // 目标槽位必须有食器
+      if (toSlot.snack) return INVALID_MOVE; // 目标槽位不能已有点心
+
+      // 移动点心
+      toSlot.snack = fromSlot.snack;
+      fromSlot.snack = undefined;
+
+      // 不消耗AP
     },
 
     taste: ({ G, playerID, events }, { slotId }: { slotId: string }) => {

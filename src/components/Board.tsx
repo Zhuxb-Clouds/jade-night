@@ -110,10 +110,10 @@ const CardView: React.FC<{ card: CardType; overlayCard?: CardType; onClick?: () 
               card.level === 1
                 ? "bg-gray-400"
                 : card.level === 2
-                ? "bg-blue-400"
-                : card.level === 3
-                ? "bg-purple-500"
-                : "bg-amber-500"
+                  ? "bg-blue-400"
+                  : card.level === 3
+                    ? "bg-purple-500"
+                    : "bg-amber-500"
             }
          `}
         >
@@ -283,7 +283,7 @@ const PlayerArea: React.FC<{
   const renderWaitingItem = (
     item: WaitingItem,
     isDraggable: boolean = false,
-    showPairingScore: boolean = false
+    showPairingScore: boolean = false,
   ) => {
     const pairingScore = showPairingScore ? calculatePairingScore(item) : 0;
 
@@ -312,8 +312,8 @@ const PlayerArea: React.FC<{
             pairingScore >= 3
               ? "bg-emerald-500 text-white"
               : pairingScore >= 2
-              ? "bg-amber-500 text-white"
-              : "bg-gray-500 text-white"
+                ? "bg-amber-500 text-white"
+                : "bg-gray-500 text-white"
           }`}
             title={`配对分: ${pairingScore}`}
           >
@@ -873,17 +873,16 @@ export const Board: React.FC = () => {
     const dragType = active.data.current?.type; // 'card' or 'waitingItem'
 
     // Case 1: Dragging Snack from Public Area (Take Snack - must place on plate)
-    // Note: DraggableCard doesn't put 'type' in data, let's fix that or assume default
     if (!dragType || dragType === "card") {
       // Snacks must be placed on an existing plate slot
       if (over.data.current?.type === "slot") {
-        sendMove("takeCard", { cardId: draggedId, targetSlotId: over.id });
+        sendMove("takeSnack", { snackId: draggedId, targetSlotId: over.id });
       }
       // Cannot place snack in waiting area without target slot
       return;
     }
 
-    // Case 2: Dragging Item from Waiting Area (Taste or Offer)
+    // Case 2: Dragging Item from Waiting Area (Taste, Offer, or adjust snack)
     if (dragType === "waitingItem") {
       const item = active.data.current?.item;
       if (!item) return;
@@ -892,24 +891,25 @@ export const Board: React.FC = () => {
         sendMove("taste", { slotId: item.id });
       } else if (over.id === "offering-area") {
         sendMove("offer", { slotId: item.id });
+      } else if (over.data.current?.type === "slot") {
+        // 调整点心位置（不消耗AP）
+        const toSlotId = over.id as string;
+        if (item.snack && toSlotId !== item.id) {
+          sendMove("adjustSnack", { fromSlotId: item.id, toSlotId: toSlotId });
+        }
       }
       return;
     }
   };
 
   const renderPublicSlot = (slot: PublicSlot) => {
-    // Public slots now only contain snacks
+    // Public slots now only contain snacks (文档规定：公共区5个槽位只有点心)
     if (slot.snack) {
       return (
         <div
           key={slot.id}
           className="relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
         >
-          {slot.tableware && (
-            <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
-              <CardView card={slot.tableware} />
-            </div>
-          )}
           <div className="absolute inset-0 flex items-center justify-center">
             {isMyTurn && myAP > 0 ? (
               <DraggableCard card={slot.snack} />
@@ -917,20 +917,6 @@ export const Board: React.FC = () => {
               <CardView card={slot.snack} />
             )}
           </div>
-        </div>
-      );
-    } else if (slot.tableware) {
-      // Only Tableware available
-      return (
-        <div
-          key={slot.id}
-          className="relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
-        >
-          {isMyTurn && myAP > 0 ? (
-            <DraggableCard card={slot.tableware} />
-          ) : (
-            <CardView card={slot.tableware} />
-          )}
         </div>
       );
     } else {
@@ -948,7 +934,7 @@ export const Board: React.FC = () => {
 
   // Handler for drawing a plate from the deck
   const handleDrawPlate = () => {
-    sendMove("drawPlate");
+    sendMove("takeTableware");
   };
 
   return (
@@ -1071,10 +1057,36 @@ export const Board: React.FC = () => {
               ) : (
                 <div className="w-full">
                   <div className="text-center text-gray-400 text-sm mb-2">
-                    Public Area (九宫格 3×3)
+                    公共区 (5个点心槽位 + 盘子抽取)
                   </div>
-                  <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
-                    {G.publicArea.map((slot: PublicSlot) => renderPublicSlot(slot))}
+                  <div className="flex flex-col items-center gap-4">
+                    {/* 5个点心槽位 */}
+                    <div className="flex gap-2 justify-center flex-wrap">
+                      {G.publicArea.map((slot: PublicSlot) => renderPublicSlot(slot))}
+                    </div>
+                    {/* 盘子抽取区 */}
+                    <div className="flex items-center gap-4 bg-stone-800/50 p-4 rounded-lg border border-stone-700">
+                      <div className="text-sm text-stone-400">
+                        <div className="font-bold mb-1">盘子抽取区</div>
+                        <div className="text-xs">
+                          L1剩余: {G.tablewareDeck?.length || 0} | L2剩余:{" "}
+                          {G.rewardDeck?.filter((c: any) => c.level === 2).length || 0}
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleDrawPlate}
+                        disabled={
+                          !isMyTurn || myAP <= 0 || G.players[myPlayerId]?.waitingArea?.length >= 5
+                        }
+                        className={`py-2 px-6 rounded-lg font-bold transition-all ${
+                          isMyTurn && myAP > 0 && G.players[myPlayerId]?.waitingArea?.length < 5
+                            ? "bg-stone-600 hover:bg-stone-500 text-white hover:scale-105"
+                            : "bg-stone-700 text-stone-500 cursor-not-allowed"
+                        }`}
+                      >
+                        抽取盘子 (1 AP)
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

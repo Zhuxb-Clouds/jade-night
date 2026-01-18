@@ -43,8 +43,7 @@ export interface Card {
 
 export interface PublicSlot {
   id: string;
-  tableware?: Card;
-  snack?: Card;
+  snack?: Card; // 公共区只有点心槽位，盘子从单独的抽取堆获取
 }
 
 export interface WaitingItem {
@@ -135,9 +134,11 @@ export const calculateFinalScore = (player: PlayerState) => {
 
   const c_wait = player.waitingArea.filter((item) => !!item.snack).length;
 
-  const totalScore = sumP_ind + c_off - c_wait * 2;
+  // 公式: S = Sum(P_ind) + C_off + T_remain - C_wait * 2
+  const teaTokens = player.teaTokens;
+  const totalScore = sumP_ind + c_off + teaTokens - c_wait * 2;
 
-  return { totalScore, sumP_ind, c_off, c_wait, hasJadeChalice: player.hasJadeChalice };
+  return { totalScore, sumP_ind, c_off, teaTokens, c_wait, hasJadeChalice: player.hasJadeChalice };
 };
 
 // --- Game State Management ---
@@ -161,9 +162,9 @@ export function createInitialState(numPlayers: number): GameState {
     };
   }
 
-  // 九宫格公共区
+  // 文档规定：公共区牌列设置为5个槽位
   const publicArea: PublicSlot[] = [];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 5; i++) {
     publicArea.push({ id: `public-slot-${i}` });
   }
 
@@ -190,11 +191,8 @@ export function createInitialState(numPlayers: number): GameState {
     }
   });
 
-  // 填充公共区
-  state.publicArea.forEach((slot, idx) => {
-    if (state.tablewareDeck.length > 0) {
-      slot.tableware = state.tablewareDeck.shift();
-    }
+  // 填充公共区点心（盘子从单独的抽取堆获取）
+  state.publicArea.forEach((slot) => {
     if (state.snackDeck.length > 0) {
       slot.snack = state.snackDeck.shift();
     }
@@ -204,63 +202,29 @@ export function createInitialState(numPlayers: number): GameState {
 }
 
 /**
- * 九宫格行列刷新机制：
- * - 位置 0,1,2 是第一行
- * - 位置 3,4,5 是第二行
- * - 位置 6,7,8 是第三行
- * - 位置 0,3,6 是第一列
- * - 位置 1,4,7 是第二列
- * - 位置 2,5,8 是第三列
+ * 从公共区抽取盘子（先L1，L1用完后L2）
  */
-function getRowSlots(slotIdx: number): number[] {
-  const row = Math.floor(slotIdx / 3);
-  return [row * 3, row * 3 + 1, row * 3 + 2];
-}
-
-function getColSlots(slotIdx: number): number[] {
-  const col = slotIdx % 3;
-  return [col, col + 3, col + 6];
+export function drawTableware(state: GameState): Card | undefined {
+  if (state.tablewareDeck.length > 0) {
+    return state.tablewareDeck.shift();
+  }
+  // L1用完，抽取L2
+  const l2Index = state.rewardDeck.findIndex((c) => c.level === 2);
+  if (l2Index !== -1) {
+    return state.rewardDeck.splice(l2Index, 1)[0];
+  }
+  return undefined;
 }
 
 /**
- * 惜食机制：拿取盘子后刷新同行列点心
+ * 补充公共区点心槽位
  */
-export function refreshRowColSnacks(state: GameState, slotIdx: number): void {
-  const rowSlots = getRowSlots(slotIdx);
-  const colSlots = getColSlots(slotIdx);
-  const affectedSlots = new Set([...rowSlots, ...colSlots]);
-
-  for (const idx of affectedSlots) {
-    const slot = state.publicArea[idx];
-    if (slot && !slot.snack && state.snackDeck.length > 0) {
+export function refillPublicSnacks(state: GameState): void {
+  state.publicArea.forEach((slot) => {
+    if (!slot.snack && state.snackDeck.length > 0) {
       slot.snack = state.snackDeck.shift();
     }
-  }
-}
-
-/**
- * 惜食机制：拿取盘子后刷新同行列盘子（L1耗尽则用L2）
- */
-export function refreshRowColPlates(state: GameState, slotIdx: number): void {
-  const rowSlots = getRowSlots(slotIdx);
-  const colSlots = getColSlots(slotIdx);
-  const affectedSlots = new Set([...rowSlots, ...colSlots]);
-
-  for (const idx of affectedSlots) {
-    const slot = state.publicArea[idx];
-    if (slot && !slot.tableware) {
-      if (state.tablewareDeck.length > 0) {
-        slot.tableware = state.tablewareDeck.shift();
-      } else if (state.rewardDeck.length > 0) {
-        // L1耗尽，使用L2盘
-        const l2Plate = state.rewardDeck.find((c) => c.level === 2);
-        if (l2Plate) {
-          state.rewardDeck = state.rewardDeck.filter((c) => c !== l2Plate);
-          slot.tableware = l2Plate;
-        }
-      }
-    }
-  }
+  });
 }
 
 export function nextPlayer(state: GameState): void {

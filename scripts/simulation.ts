@@ -25,8 +25,8 @@ import {
   calculatePairingScore,
   calculateFinalScore,
   createInitialState,
-  refreshRowColSnacks,
-  refreshRowColPlates,
+  drawTableware,
+  refillPublicSnacks,
   nextPlayer,
   isGameOver,
 } from "../src/game/core.js";
@@ -106,12 +106,6 @@ export class GameSimulator {
 
     if (player.actionPoints <= 0) return ["endTurn"];
 
-    // 【惜食】Slot 0 可以1AP同时拿取盘子和点心（根据行列刷新规则）
-    const slot0 = G.publicArea[0];
-    if (slot0 && slot0.tableware && slot0.snack && player.waitingArea.length < 5) {
-      actions.push("takeCombo:0");
-    }
-
     // 拿取点心 - 放到有空位的盘子上
     for (let i = 0; i < G.publicArea.length; i++) {
       const slot = G.publicArea[i];
@@ -120,18 +114,18 @@ export class GameSimulator {
           const item = player.waitingArea[j];
           // 普通盘子：没有点心时可以放
           if (item.tableware && !item.snack) {
-            actions.push(`takeCard:snack:${i}:${j}`);
+            actions.push(`takeSnack:${i}:${j}`);
           }
         }
       }
     }
 
-    // 拿取食器 - 需要槽位点心被拿走（或本来没有点心）
-    for (let i = 0; i < G.publicArea.length; i++) {
-      const slot = G.publicArea[i];
-      if (slot.tableware && !slot.snack && player.waitingArea.length < 5) {
-        actions.push(`takeCard:tableware:${i}`);
-      }
+    // 拿取食器 - 从盘子堆抽取（先L1，后L2）
+    if (
+      player.waitingArea.length < 5 &&
+      (G.tablewareDeck.length > 0 || G.rewardDeck.some((c) => c.level === 2))
+    ) {
+      actions.push("takeTableware");
     }
 
     // 品鉴 - 每回合只能一次
@@ -156,8 +150,8 @@ export class GameSimulator {
       }
     }
 
-    // 敬茶 - 检查茶券条件（基础9个减去奉献区数量）
-    if (!G.jadeGiven) {
+    // 敬茶 - 检查茶券条件（基础9个减去奉献区数量），消耗3AP
+    if (!G.jadeGiven && player.actionPoints >= 3) {
       const baseCost = 9;
       const discount = player.offeringArea.length;
       const actualCost = Math.max(0, baseCost - discount);
@@ -174,7 +168,7 @@ export class GameSimulator {
       }
     }
 
-    // 【调整】移动点心到空盘
+    // 【调整】移动点心到空盘（不消耗AP）
     for (let srcIdx = 0; srcIdx < player.waitingArea.length; srcIdx++) {
       const source = player.waitingArea[srcIdx];
       if (source.snack) {
@@ -206,60 +200,34 @@ export class GameSimulator {
 
     try {
       switch (parts[0]) {
-        case "takeCombo": {
-          // 惜食：同时拿取盘子和点心（1AP）
+        case "takeSnack": {
+          // 拿取点心放到盘子上（1AP）
           const slotIdx = parseInt(parts[1]);
+          const targetIdx = parseInt(parts[2]);
           const slot = G.publicArea[slotIdx];
+          const target = player.waitingArea[targetIdx];
 
-          if (slot.tableware && slot.snack && player.waitingArea.length < 5) {
-            player.waitingArea.push({
-              id: `item-${Date.now()}-${Math.random()}`,
-              tableware: slot.tableware,
-              snack: slot.snack,
-            });
-            slot.tableware = undefined;
+          if (slot?.snack && target?.tableware && !target.snack) {
+            target.snack = slot.snack;
             slot.snack = undefined;
             player.actionPoints--;
 
-            // 惜食刷新
-            refreshRowColSnacks(G, slotIdx);
-            refreshRowColPlates(G, slotIdx);
+            // 立即补充点心
+            refillPublicSnacks(G);
           }
           return true;
         }
 
-        case "takeCard": {
-          const type = parts[1] as "snack" | "tableware";
-          const slotIdx = parseInt(parts[2]);
-          const slot = G.publicArea[slotIdx];
-
-          if (type === "snack") {
-            const targetIdx = parseInt(parts[3]);
-            const target = player.waitingArea[targetIdx];
-
-            if (slot?.snack && target?.tableware && !target.snack) {
-              target.snack = slot.snack;
-              slot.snack = undefined;
-              player.actionPoints--;
-
-              // 补充点心
-              if (G.snackDeck.length > 0) {
-                slot.snack = G.snackDeck.shift();
-              }
-            }
-          } else {
-            // 拿取盘子
-            if (slot?.tableware && !slot.snack && player.waitingArea.length < 5) {
+        case "takeTableware": {
+          // 抽取盘子（1AP）
+          if (player.waitingArea.length < 5) {
+            const tableware = drawTableware(G);
+            if (tableware) {
               player.waitingArea.push({
                 id: `item-${Date.now()}-${Math.random()}`,
-                tableware: slot.tableware,
+                tableware: tableware,
               });
-              slot.tableware = undefined;
               player.actionPoints--;
-
-              // 惜食刷新
-              refreshRowColSnacks(G, slotIdx);
-              refreshRowColPlates(G, slotIdx);
             }
           }
           return true;
@@ -329,14 +297,14 @@ export class GameSimulator {
         }
 
         case "serveTea": {
-          if (!G.jadeGiven) {
+          if (!G.jadeGiven && player.actionPoints >= 3) {
             const baseCost = 9;
             const discount = player.offeringArea.length;
             const actualCost = Math.max(0, baseCost - discount);
 
             if (player.teaTokens >= actualCost) {
               player.teaTokens -= actualCost;
-              player.actionPoints--;
+              player.actionPoints -= 3; // 敬茶消耗3AP
               player.hasJadeChalice = true;
               G.jadeGiven = true;
             }
@@ -355,6 +323,7 @@ export class GameSimulator {
         }
 
         case "moveSnack": {
+          // 调整点心位置（不消耗AP）
           const srcIdx = parseInt(parts[1]);
           const dstIdx = parseInt(parts[2]);
           const source = player.waitingArea[srcIdx];
@@ -363,7 +332,7 @@ export class GameSimulator {
           if (source?.snack && target?.tableware && !target.snack) {
             target.snack = source.snack;
             source.snack = undefined;
-            player.actionPoints--;
+            // 不消耗AP
           }
           return true;
         }
@@ -686,7 +655,7 @@ export class GameSimulator {
 
         if (debug && actionCount < 50) {
           console.log(
-            `[${actionCount}] P${pid}: ${action} (点心剩余: ${G.snackDeck.length}, AP: ${apBefore})`
+            `[${actionCount}] P${pid}: ${action} (点心剩余: ${G.snackDeck.length}, AP: ${apBefore})`,
           );
         }
 
@@ -911,7 +880,7 @@ async function main() {
   const debugSim2 = new GameSimulator(2, ["greedy", "balanced"]);
   const debugResult2 = debugSim2.simulate(true);
   console.log(
-    `\n回合数: ${debugResult2.turns}, 分数: P0=${debugResult2.scores["0"]}, P1=${debugResult2.scores["1"]}`
+    `\n回合数: ${debugResult2.turns}, 分数: P0=${debugResult2.scores["0"]}, P1=${debugResult2.scores["1"]}`,
   );
 
   // 测试2: 策略对比
@@ -956,7 +925,7 @@ async function main() {
   fs.writeFileSync(
     outputPath,
     JSON.stringify({ stats1, stats2, stats3, stats4 }, null, 2),
-    "utf-8"
+    "utf-8",
   );
   console.log(`\n📁 结果已保存至: ${outputPath}`);
 }
