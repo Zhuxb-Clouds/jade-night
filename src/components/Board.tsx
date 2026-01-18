@@ -1,6 +1,12 @@
 import React from "react";
 import { useP2P } from "../network/P2PContext";
-import { Card as CardType, WaitingItem, PublicSlot } from "../game/config";
+import {
+  Card as CardType,
+  WaitingItem,
+  PublicSlot,
+  calculatePairingScore,
+  calculateFinalScore,
+} from "../game/config";
 import { DndContext, useDraggable, useDroppable, DragEndEvent } from "@dnd-kit/core";
 
 // --- Visual Components ---
@@ -231,7 +237,7 @@ const DroppablePersonalArea = ({
         isOver ? "border-amber-400 bg-amber-900/20" : "border-gray-700"
       }`}
     >
-      <div className="text-xs text-gray-500 mb-1">Personal Area (Max 5)</div>
+      <div className="text-xs text-gray-500 mb-1">Personal Area</div>
       <div className="flex flex-wrap">{children}</div>
     </div>
   );
@@ -257,7 +263,7 @@ const DroppableOfferingArea = ({
         isOver ? "border-purple-400 bg-purple-900/20" : "border-gray-700"
       }`}
     >
-      <div className="text-xs text-gray-500 mb-1">Offering Area (Max 5)</div>
+      <div className="text-xs text-gray-500 mb-1">Offering Area</div>
       <div className="flex flex-wrap">{children}</div>
     </div>
   );
@@ -270,17 +276,24 @@ const PlayerArea: React.FC<{
   playerState: any;
   isCurrentPlayer: boolean;
 }> = ({ playerId, playerState, isCurrentPlayer }) => {
-  const renderWaitingItem = (item: WaitingItem, isDraggable: boolean = false) => {
-    // Logic for Draggable Wrapper if current player owns item
-    // Note: In Dnd-kit, we usually drag the SOURCE.
-    // Waiting Items are sources for Offer/Taste/Share.
-    // So if isDraggable is true, we wrap in DraggableNavItem?
-    // Actually we have DraggableCard. But here we drag the whole waiting Item (slot contents).
-    // We can make the item draggable by its ID.
+  // Calculate real-time score
+  const scoreData = playerState ? calculateFinalScore(playerState) : null;
+
+  // Render a waiting item with optional pairing score badge
+  const renderWaitingItem = (
+    item: WaitingItem,
+    isDraggable: boolean = false,
+    showPairingScore: boolean = false
+  ) => {
+    const pairingScore = showPairingScore ? calculatePairingScore(item) : 0;
 
     const content = (() => {
       if (item.tableware && item.snack) {
         return <CardView key={item.id} card={item.tableware} overlayCard={item.snack} />;
+      }
+      // Check for Jade Chalice with multiple snacks
+      if (item.tableware && item.snacks && item.snacks.length > 0) {
+        return <CardView key={item.id} card={item.tableware} overlayCard={item.snacks[0]} />;
       }
       const card = item.tableware || item.snack;
       return card ? <CardView key={item.id} card={card} /> : null;
@@ -288,10 +301,33 @@ const PlayerArea: React.FC<{
 
     if (!content) return null;
 
+    // Wrap with pairing score badge if needed
+    const wrappedContent =
+      showPairingScore && pairingScore > 0 ? (
+        <div className="relative">
+          {content}
+          <div
+            className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg
+          ${
+            pairingScore >= 3
+              ? "bg-emerald-500 text-white"
+              : pairingScore >= 2
+              ? "bg-amber-500 text-white"
+              : "bg-gray-500 text-white"
+          }`}
+            title={`配对分: ${pairingScore}`}
+          >
+            {pairingScore}
+          </div>
+        </div>
+      ) : (
+        content
+      );
+
     if (isDraggable) {
-      return <DraggableWaitingItem item={item}>{content}</DraggableWaitingItem>;
+      return <DraggableWaitingItem item={item}>{wrappedContent}</DraggableWaitingItem>;
     }
-    return content;
+    return wrappedContent;
   };
 
   return (
@@ -308,15 +344,24 @@ const PlayerArea: React.FC<{
             <h3 className={`font-bold ${isCurrentPlayer ? "text-emerald-400" : "text-gray-400"}`}>
               {isCurrentPlayer ? "My Area" : `Player ${playerId}`}
               {playerState.hasJadeChalice && (
-                <span className="ml-2 text-amber-400" title="玉盏持有者 - 奉献分×2">
-                  🏆
+                <span
+                  className="ml-2 px-2 py-0.5 bg-amber-600/30 border border-amber-500 rounded-full text-amber-400 text-xs animate-pulse"
+                  title="玉盏持有者 - 奉献分×2"
+                >
+                  🏆 玉盏
                 </span>
               )}
             </h3>
             <div className="text-xs text-gray-500">
               <span className="mr-2">AP: {playerState.actionPoints}</span>
               <span className="mr-2">🍵 {playerState.teaTokens || 0}</span>
-              <span>Score: 0</span>
+              <span
+                title={`个人区: ${scoreData?.sumP_ind || 0}, 奉献: +${scoreData?.c_off || 0}${
+                  playerState.hasJadeChalice ? "(×2)" : ""
+                }, 茶券: +${scoreData?.teaTokens || 0}, 惩罚: -${(scoreData?.c_wait || 0) * 2}`}
+              >
+                Score: {scoreData?.totalScore || 0}
+              </span>
             </div>
           </div>
 
@@ -330,7 +375,8 @@ const PlayerArea: React.FC<{
                 )}
                 {playerState.waitingArea.map((item: WaitingItem) => (
                   <DroppableSlot key={item.id} slot={item} isCurrentPlayer={isCurrentPlayer}>
-                    {renderWaitingItem(item, true)} {/* Enable dragging from waiting area */}
+                    {renderWaitingItem(item, true, true)}{" "}
+                    {/* Enable dragging and show pairing score */}
                   </DroppableSlot>
                 ))}
               </DroppableWaitingArea>
@@ -339,7 +385,7 @@ const PlayerArea: React.FC<{
                 <div className="text-xs text-gray-500 mb-1">Waiting Area (Max 5)</div>
                 <div className="flex flex-wrap">
                   {playerState.waitingArea.map((item: WaitingItem) => (
-                    <div key={item.id}>{renderWaitingItem(item)}</div>
+                    <div key={item.id}>{renderWaitingItem(item, false, true)}</div>
                   ))}
                 </div>
               </div>
@@ -359,14 +405,14 @@ const PlayerArea: React.FC<{
                         zIndex: index,
                       }}
                     >
-                      {renderWaitingItem(item, false)}
+                      {renderWaitingItem(item, false, true)}
                     </div>
                   ))}
                 </div>
               </DroppablePersonalArea>
             ) : (
               <div className="flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed border-gray-700">
-                <div className="text-xs text-gray-500 mb-1">Personal Area (Max 5)</div>
+                <div className="text-xs text-gray-500 mb-1">Personal Area</div>
                 <div className="flex flex-wrap">
                   {playerState.personalArea.map((item: WaitingItem, index: number) => (
                     <div
@@ -377,7 +423,7 @@ const PlayerArea: React.FC<{
                         zIndex: index,
                       }}
                     >
-                      {renderWaitingItem(item, false)}
+                      {renderWaitingItem(item, false, true)}
                     </div>
                   ))}
                 </div>
@@ -398,14 +444,14 @@ const PlayerArea: React.FC<{
                         zIndex: index,
                       }}
                     >
-                      {renderWaitingItem(item, false)}
+                      {renderWaitingItem(item, false, true)}
                     </div>
                   ))}
                 </div>
               </DroppableOfferingArea>
             ) : (
               <div className="flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed border-gray-700">
-                <div className="text-xs text-gray-500 mb-1">Offering Area (Max 5)</div>
+                <div className="text-xs text-gray-500 mb-1">Offering Area</div>
                 <div className="flex flex-wrap">
                   {playerState.offeringArea.map((item: WaitingItem, index: number) => (
                     <div
@@ -416,7 +462,7 @@ const PlayerArea: React.FC<{
                         zIndex: index,
                       }}
                     >
-                      {renderWaitingItem(item, false)}
+                      {renderWaitingItem(item, false, true)}
                     </div>
                   ))}
                 </div>
@@ -478,20 +524,17 @@ const GrandmotherStatus: React.FC<{
   const allPlayers = Object.values(players);
   const totalOfferings = allPlayers.reduce((sum: number, p: any) => sum + p.offeringArea.length, 0);
 
-  // 使用传入的 jadeGiven 标志
-  const jadeDistributed = jadeGiven;
-
   // Check L2 plates remaining in reward deck
   const l2PlatesRemaining = rewardDeck.filter((c: any) => c.level === 2).length;
   const allL2Distributed = l2PlatesRemaining === 0;
 
-  // Game end condition check: 满足其一即可
-  const endConditionMet = jadeDistributed || allL2Distributed;
+  // Game end condition check: 仅检查L2盘子是否全部发完
+  const endConditionMet = allL2Distributed;
 
-  // 敬茶条件检查: 需要茶券 >= (9 - 奉献数)
+  // 敬茶条件检查: 需要茶券 >= (9 - 奉献数)，且需要3AP
   const baseCost = 9;
   const actualCost = Math.max(0, baseCost - myOfferingCount);
-  const canServeTea = !jadeGiven && myTeaTokens >= actualCost && isMyTurn && myAP > 0;
+  const canServeTea = !jadeGiven && myTeaTokens >= actualCost && isMyTurn && myAP >= 3;
 
   return (
     <div className="w-64 bg-stone-900 border-r border-stone-800 p-6 flex flex-col gap-6 text-stone-200 shadow-2xl z-20 shrink-0">
@@ -506,22 +549,10 @@ const GrandmotherStatus: React.FC<{
           <span className="text-2xl font-bold text-amber-400 font-serif">{totalOfferings}</span>
         </div>
 
-        {/* Game End Conditions */}
+        {/* Game End Condition */}
         <div className="space-y-2">
           <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-            游戏结束条件 (满足其一)
-          </div>
-          <div
-            className={`flex items-center gap-2 p-2 rounded border ${
-              jadeDistributed
-                ? "bg-emerald-900/30 border-emerald-700 text-emerald-300"
-                : "bg-stone-800 border-stone-700 text-stone-400"
-            }`}
-          >
-            <span className={jadeDistributed ? "text-emerald-400" : "text-stone-600"}>
-              {jadeDistributed ? "✓" : "○"}
-            </span>
-            <span className="text-sm">玉盏已发放</span>
+            游戏结束条件
           </div>
           <div
             className={`flex items-center gap-2 p-2 rounded border ${
@@ -552,6 +583,7 @@ const GrandmotherStatus: React.FC<{
         jadeGiven={jadeGiven}
         isMyTurn={isMyTurn}
         onServeTea={onServeTea}
+        players={players}
       />
 
       {/* 奉献规则说明 */}
@@ -646,13 +678,31 @@ const ServeTeaButton: React.FC<{
   jadeGiven: boolean;
   isMyTurn: boolean;
   onServeTea: () => void;
-}> = ({ canServeTea, myOfferingCount, myTeaTokens, jadeGiven, isMyTurn, onServeTea }) => {
-  if (jadeGiven) return null; // 玉盏已发放，不显示按钮
-
+  players: Record<string, any>;
+}> = ({ canServeTea, myOfferingCount, myTeaTokens, jadeGiven, isMyTurn, onServeTea, players }) => {
   // 计算实际需要的茶券数量：基础9个，每1个奉献减少1个
   const baseCost = 9;
   const actualCost = Math.max(0, baseCost - myOfferingCount);
   const meetsTeaReq = myTeaTokens >= actualCost;
+
+  // 查找玉盏持有者
+  const jadeHolderId = jadeGiven
+    ? Object.keys(players).find((pid) => players[pid].hasJadeChalice)
+    : null;
+
+  // 玉盏已发放，显示持有者信息
+  if (jadeGiven) {
+    return (
+      <div className="bg-gradient-to-r from-amber-900/50 to-stone-800/50 border border-amber-600 rounded-lg p-4 mt-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="text-3xl">🏆</span>
+          <div className="text-amber-400 font-bold font-serif text-lg">玉盏已归属</div>
+        </div>
+        <div className="text-center text-amber-300 text-sm">Player {jadeHolderId} 持有玉盏</div>
+        <div className="text-center text-stone-400 text-xs mt-2">奉献分×2</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-r from-amber-900/30 to-stone-800/50 border border-amber-700/50 rounded-lg p-4 mt-4">
@@ -664,7 +714,7 @@ const ServeTeaButton: React.FC<{
       <div className="space-y-2 mb-3">
         <div className="flex items-center gap-2 text-sm text-stone-400">
           <span>ℹ️</span>
-          <span>基础9茶券，奉献每盘减1</span>
+          <span>基础9茶券，奉献每盘减1，消耗3AP</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-stone-300">
           <span>🍵</span>
@@ -682,9 +732,9 @@ const ServeTeaButton: React.FC<{
             当前茶券: {myTeaTokens} / 需要: {actualCost}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-amber-300">
-          <span>✨</span>
-          <span>获得后奉献分×2</span>
+        <div className="flex items-center gap-2 text-sm text-rose-300">
+          <span>⚡</span>
+          <span>消耗 3 AP</span>
         </div>
       </div>
 
@@ -725,6 +775,7 @@ const GameOverScreen: React.FC<{ gameover: any; players: any }> = ({ gameover, p
           {Object.keys(players).map((pid) => {
             const scoreData = scores[pid];
             const isWinner = pid === winnerId;
+            const hasJadeChalice = players[pid].hasJadeChalice;
 
             return (
               <div
@@ -736,22 +787,36 @@ const GameOverScreen: React.FC<{ gameover: any; players: any }> = ({ gameover, p
                 <div className="flex items-center gap-4">
                   {isWinner && <span className="text-2xl">👑</span>}
                   <div>
-                    <div className={`font-bold ${isWinner ? "text-amber-400" : "text-stone-300"}`}>
+                    <div
+                      className={`font-bold flex items-center gap-2 ${
+                        isWinner ? "text-amber-400" : "text-stone-300"
+                      }`}
+                    >
                       Player {pid}
+                      {hasJadeChalice && (
+                        <span className="text-amber-400 text-sm" title="玉盏持有者">
+                          🏆
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-stone-500">
                       Items: {players[pid].personalArea.length} Personal /{" "}
                       {players[pid].offeringArea.length} Offered
+                      {hasJadeChalice && " (奉献×2)"}
                     </div>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <div className="text-3xl font-bold font-serif">{scoreData.totalScore}</div>
-                  <div className="text-[10px] text-stone-500 flex gap-2 justify-end">
-                    <span>P: {scoreData.sumP_ind}</span>
-                    <span>O: +{scoreData.c_off}</span>
-                    <span>Pen: -{scoreData.c_wait * 2}</span>
+                  <div className="text-[10px] text-stone-500 flex gap-2 justify-end flex-wrap">
+                    <span>个人: {scoreData.sumP_ind}</span>
+                    <span>
+                      奉献: +{scoreData.c_off}
+                      {hasJadeChalice ? "(×2)" : ""}
+                    </span>
+                    <span>茶券: +{scoreData.teaTokens}</span>
+                    <span>惩罚: -{scoreData.c_wait * 2}</span>
                   </div>
                 </div>
               </div>
@@ -787,7 +852,6 @@ export const Board: React.FC = () => {
   const isMyTurn = ctx.currentPlayer === myPlayerId;
   const myAP = G.players[myPlayerId]?.actionPoints || 0;
   const myTeaTokens = G.players[myPlayerId]?.teaTokens || 0;
-  const teaTokenUsedThisTurn = G.players[myPlayerId]?.teaTokenUsedThisTurn || false;
   const myOfferingCount = G.players[myPlayerId]?.offeringArea?.length || 0;
 
   // Start Game Handler
@@ -965,7 +1029,7 @@ export const Board: React.FC = () => {
                       <div className="text-2xl font-black text-amber-400 leading-none">
                         🍵 {myTeaTokens}
                       </div>
-                      {myTeaTokens > 0 && !teaTokenUsedThisTurn && (
+                      {myTeaTokens > 0 && (
                         <button
                           onClick={() => sendMove("useTeaToken")}
                           className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-1 px-2 rounded transition"
@@ -973,9 +1037,6 @@ export const Board: React.FC = () => {
                         >
                           +1 AP
                         </button>
-                      )}
-                      {teaTokenUsedThisTurn && (
-                        <span className="text-xs text-gray-400">本回合已用</span>
                       )}
                     </div>
                   </div>

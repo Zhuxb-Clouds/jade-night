@@ -120,20 +120,6 @@ export const calculateSinglePairingScore = (tableware: Card, snack: Card): numbe
 
 export const calculatePairingScore = (item: WaitingItem): number => {
   if (!item.tableware) return 0;
-
-  const isJadeChalice = item.tableware.name === "玉盏";
-
-  if (isJadeChalice && item.snacks && item.snacks.length > 0) {
-    const uniqueScores = new Set<number>();
-    for (const snack of item.snacks) {
-      const score = calculateSinglePairingScore(item.tableware, snack);
-      uniqueScores.add(score);
-    }
-    let totalScore = 0;
-    uniqueScores.forEach((s) => (totalScore += s));
-    return totalScore;
-  }
-
   if (!item.snack) return 0;
   return calculateSinglePairingScore(item.tableware, item.snack);
 };
@@ -142,6 +128,7 @@ export const calculateFinalScore = (player: PlayerState) => {
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
   let c_off = player.offeringArea.length;
+  // 玉盏持有者奉献分翻倍
   if (player.hasJadeChalice) {
     c_off = c_off * 2;
   }
@@ -291,11 +278,10 @@ export function nextPlayer(state: GameState): void {
 
   // 检查结束条件
   if (state.endConditionTriggeredAtRound === null) {
-    const jadeDistributed = state.jadeGiven;
     const l2PlatesRemaining = state.rewardDeck.filter((c) => c.level === 2).length;
     const allL2Distributed = l2PlatesRemaining === 0;
 
-    if (jadeDistributed || allL2Distributed) {
+    if (allL2Distributed) {
       state.endConditionTriggeredAtRound = state.turn;
     }
   }

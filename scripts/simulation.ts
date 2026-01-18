@@ -64,34 +64,6 @@ interface SimulationStats {
 
 // ============== 工具函数 ==============
 
-/**
- * 计算玉盏堆叠点心的增量分数
- * 玉盏的计分规则是所有点心的不同属性数求和
- */
-function calculateJadeScoreGain(jadeItem: WaitingItem, newSnack: Card): number {
-  const existingColors = new Set<CardColor>();
-  const existingShapes = new Set<CardShape>();
-  const existingTemps = new Set<CardTemp>();
-
-  // 统计已有点心的属性
-  for (const snack of jadeItem.snacks || []) {
-    snack.attributes.colors.forEach((c) => existingColors.add(c));
-    snack.attributes.shapes.forEach((s) => existingShapes.add(s));
-    snack.attributes.temps.forEach((t) => existingTemps.add(t));
-  }
-
-  const oldScore = existingColors.size + existingShapes.size + existingTemps.size;
-
-  // 模拟添加新点心
-  newSnack.attributes.colors.forEach((c) => existingColors.add(c));
-  newSnack.attributes.shapes.forEach((s) => existingShapes.add(s));
-  newSnack.attributes.temps.forEach((t) => existingTemps.add(t));
-
-  const newScore = existingColors.size + existingShapes.size + existingTemps.size;
-
-  return newScore - oldScore;
-}
-
 // ============== 游戏模拟器 (使用 core.ts 游戏逻辑) ==============
 
 export class GameSimulator {
@@ -147,12 +119,8 @@ export class GameSimulator {
         for (let j = 0; j < player.waitingArea.length; j++) {
           const item = player.waitingArea[j];
           // 普通盘子：没有点心时可以放
-          if (item.tableware && !item.snack && !item.snacks) {
+          if (item.tableware && !item.snack) {
             actions.push(`takeCard:snack:${i}:${j}`);
-          }
-          // 玉盏：可以堆叠最多3个点心（如果玉盏逻辑存在的话）
-          if (item.tableware?.name === "玉盏" && item.snacks && item.snacks.length < 3) {
-            actions.push(`takeCardToJade:${i}:${j}`);
           }
         }
       }
@@ -170,12 +138,8 @@ export class GameSimulator {
     if (!player.tasteDoneThisTurn) {
       for (let j = 0; j < player.waitingArea.length; j++) {
         const item = player.waitingArea[j];
-        // 普通盘子有点心
+        // 盘子有点心
         if (item.tableware && item.snack) {
-          actions.push(`taste:${j}`);
-        }
-        // 玉盏有点心
-        if (item.tableware?.name === "玉盏" && item.snacks && item.snacks.length > 0) {
           actions.push(`taste:${j}`);
         }
       }
@@ -224,7 +188,7 @@ export class GameSimulator {
     }
 
     // 使用茶券
-    if (player.teaTokens > 0 && !player.teaTokenUsedThisTurn) {
+    if (player.teaTokens > 0) {
       actions.push("useTeaToken");
     }
 
@@ -274,12 +238,7 @@ export class GameSimulator {
             const target = player.waitingArea[targetIdx];
 
             if (slot?.snack && target?.tableware && !target.snack) {
-              // 检查是否是玉盏
-              if (target.tableware.name === "玉盏" && target.snacks) {
-                target.snacks.push(slot.snack);
-              } else {
-                target.snack = slot.snack;
-              }
+              target.snack = slot.snack;
               slot.snack = undefined;
               player.actionPoints--;
 
@@ -306,36 +265,12 @@ export class GameSimulator {
           return true;
         }
 
-        case "takeCardToJade": {
-          const slotIdx = parseInt(parts[1]);
-          const targetIdx = parseInt(parts[2]);
-          const slot = G.publicArea[slotIdx];
-          const target = player.waitingArea[targetIdx];
-
-          if (
-            slot?.snack &&
-            target?.tableware?.name === "玉盏" &&
-            target.snacks &&
-            target.snacks.length < 3
-          ) {
-            target.snacks.push(slot.snack);
-            slot.snack = undefined;
-            player.actionPoints--;
-
-            if (G.snackDeck.length > 0) {
-              slot.snack = G.snackDeck.shift();
-            }
-          }
-          return true;
-        }
-
         case "taste": {
           const itemIdx = parseInt(parts[1]);
           const item = player.waitingArea[itemIdx];
 
           if (item && !player.tasteDoneThisTurn) {
-            const hasSnack = item.snack || (item.snacks && item.snacks.length > 0);
-            if (item.tableware && hasSnack) {
+            if (item.tableware && item.snack) {
               player.waitingArea.splice(itemIdx, 1);
               player.personalArea.push(item);
               player.actionPoints--;
@@ -434,10 +369,9 @@ export class GameSimulator {
         }
 
         case "useTeaToken": {
-          if (player.teaTokens > 0 && !player.teaTokenUsedThisTurn) {
+          if (player.teaTokens > 0) {
             player.teaTokens--;
             player.actionPoints++;
-            player.teaTokenUsedThisTurn = true;
           }
           return true;
         }
@@ -482,33 +416,6 @@ export class GameSimulator {
     const validActions = actions.filter((a) => a !== "endTurn");
     if (validActions.length === 0) return "endTurn";
     return validActions[Math.floor(Math.random() * validActions.length)];
-  }
-
-  /**
-   * 智能选择玉盏堆叠动作：找能增加分数的点心
-   */
-  private findBestJadeAction(player: PlayerState, jadeActions: string[]): string | null {
-    const G = this.getState();
-    let bestAction: string | null = null;
-    let bestGain = 0;
-
-    for (const action of jadeActions) {
-      const parts = action.split(":");
-      const slotIdx = parseInt(parts[1]);
-      const targetIdx = parseInt(parts[2]);
-      const slot = G.publicArea[slotIdx];
-      const target = player.waitingArea[targetIdx];
-
-      if (slot?.snack && target) {
-        const gain = calculateJadeScoreGain(target, slot.snack);
-        if (gain > bestGain) {
-          bestGain = gain;
-          bestAction = action;
-        }
-      }
-    }
-
-    return bestGain > 0 ? bestAction : null;
   }
 
   /**
@@ -586,13 +493,6 @@ export class GameSimulator {
       if (bestScore >= 1) return bestTaste;
     }
 
-    // 玉盏堆叠点心 - 智能选择
-    const jadeActions = actions.filter((a) => a.startsWith("takeCardToJade:"));
-    if (jadeActions.length > 0) {
-      const bestJadeAction = this.findBestJadeAction(player, jadeActions);
-      if (bestJadeAction) return bestJadeAction;
-    }
-
     // 拿取点心
     const takeSnackActions = actions.filter((a) => a.startsWith("takeCard:snack:"));
     if (takeSnackActions.length > 0) {
@@ -625,13 +525,6 @@ export class GameSimulator {
     // 惜食优先
     const combo = actions.find((a) => a.startsWith("takeCombo:"));
     if (combo) return combo;
-
-    // 玉盏堆叠
-    const jadeActions = actions.filter((a) => a.startsWith("takeCardToJade:"));
-    if (jadeActions.length > 0) {
-      const bestJadeAction = this.findBestJadeAction(player, jadeActions);
-      if (bestJadeAction) return bestJadeAction;
-    }
 
     // 奉献高分配对
     const offerActions = actions.filter((a) => a.startsWith("offer:"));
@@ -726,15 +619,6 @@ export class GameSimulator {
     // 惜食优先
     const combo = actions.find((a) => a.startsWith("takeCombo:"));
     if (combo) return combo;
-
-    // 玉盏堆叠点心 - 智能选择
-    const jadeActions = actions.filter((a) => a.startsWith("takeCardToJade:"));
-    if (jadeActions.length > 0) {
-      const bestJadeAction = this.findBestJadeAction(player, jadeActions);
-      if (bestJadeAction) return bestJadeAction;
-      // 玉盏冲刺策略更激进
-      return jadeActions[Math.floor(Math.random() * jadeActions.length)];
-    }
 
     // 快速奉献积累资历
     const offerActions = actions.filter((a) => a.startsWith("offer:"));
