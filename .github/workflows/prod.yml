@@ -38,7 +38,7 @@ jobs:
 
       - name: Deploy to Server
         id: deploy_step
-        uses: appleboy/scp-action@v1.6.3
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.MY_HOST }}
           username: ${{ secrets.MY_USER }}
