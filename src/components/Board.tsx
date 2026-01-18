@@ -872,15 +872,14 @@ export const Board: React.FC = () => {
     const draggedId = active.id as string;
     const dragType = active.data.current?.type; // 'card' or 'waitingItem'
 
-    // Case 1: Dragging Card from Public Area (Take Card)
+    // Case 1: Dragging Snack from Public Area (Take Snack - must place on plate)
     // Note: DraggableCard doesn't put 'type' in data, let's fix that or assume default
     if (!dragType || dragType === "card") {
-      // Assuming logic from DraggableCard
-      if (over.id === "waiting-area") {
-        sendMove("takeCard", { cardId: draggedId, targetSlotId: undefined });
-      } else if (over.data.current?.type === "slot") {
+      // Snacks must be placed on an existing plate slot
+      if (over.data.current?.type === "slot") {
         sendMove("takeCard", { cardId: draggedId, targetSlotId: over.id });
       }
+      // Cannot place snack in waiting area without target slot
       return;
     }
 
@@ -899,12 +898,8 @@ export const Board: React.FC = () => {
   };
 
   const renderPublicSlot = (slot: PublicSlot) => {
-    // If slot has Snack, it's on top of Tableware
-    // Only the top card is draggable
-
+    // Public slots now only contain snacks
     if (slot.snack) {
-      // Snack is available
-      // If Tableware is also there, render it as background
       return (
         <div
           key={slot.id}
@@ -939,16 +934,21 @@ export const Board: React.FC = () => {
         </div>
       );
     } else {
-      // Empty slot (should be refilled automatically, but just in case)
+      // Empty slot
       return (
         <div
           key={slot.id}
           className="w-28 h-40 bg-gray-800/20 rounded border border-gray-700 flex items-center justify-center"
         >
-          <span className="text-xs text-gray-600">Empty</span>
+          <span className="text-xs text-gray-600">空</span>
         </div>
       );
     }
+  };
+
+  // Handler for drawing a plate from the deck
+  const handleDrawPlate = () => {
+    sendMove("drawPlate");
   };
 
   return (

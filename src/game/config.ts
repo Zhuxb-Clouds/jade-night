@@ -38,7 +38,6 @@ export interface Card {
 
 export interface PublicSlot {
   id: string;
-  tableware?: Card;
   snack?: Card;
 }
 
@@ -362,9 +361,8 @@ export const JadeNightGame: Game<JadeNightState> = {
         }
       });
 
-      // Fill public area (from remaining L1 deck)
+      // Fill public area with snacks only (plates drawn separately)
       G.publicArea.forEach((slot) => {
-        if (G.tablewareDeck.length > 0) slot.tableware = G.tablewareDeck.shift();
         if (G.snackDeck.length > 0) slot.snack = G.snackDeck.shift();
       });
 
@@ -375,23 +373,21 @@ export const JadeNightGame: Game<JadeNightState> = {
       G.isGameStarted = true;
     },
 
-    // Take card from public area
+    // Take snack from public area (5 slots with snacks only)
     takeCard: (
       { G, playerID, events },
-      { cardId, targetSlotId }: { cardId: string; targetSlotId?: string }
+      { cardId, targetSlotId }: { cardId: string; targetSlotId: string }
     ) => {
       const pid = playerID || "0";
       const player = G.players[pid];
 
-      // Find card in public area
-      const slotIndex = G.publicArea.findIndex(
-        (s) => s.tableware?.id === cardId || s.snack?.id === cardId
-      );
+      // Find snack in public area
+      const slotIndex = G.publicArea.findIndex((s) => s.snack?.id === cardId);
       if (slotIndex === -1) return INVALID_MOVE;
       const slot = G.publicArea[slotIndex];
 
-      let card: Card | undefined;
-      let isSnack = false;
+      const snack = slot.snack;
+      if (!snack) return INVALID_MOVE;
 
       // Logic: Must take Snack first if present
       if (slot.snack && slot.snack.id === cardId) {
@@ -409,11 +405,9 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       if (player.actionPoints <= 0) return INVALID_MOVE;
 
-      // Logic for placing card
-      if (targetSlotId) {
-        // Placing on existing slot (must be Snack on Tableware)
-        const waitingSlot = player.waitingArea.find((s) => s.id === targetSlotId);
-        if (!waitingSlot) return INVALID_MOVE;
+      // Snack must be placed on an existing plate in waiting area
+      const waitingSlot = player.waitingArea.find((s) => s.id === targetSlotId);
+      if (!waitingSlot) return INVALID_MOVE;
 
         if (isSnack && waitingSlot.tableware) {
           // Normal plate: can only have one snack
@@ -427,15 +421,10 @@ export const JadeNightGame: Game<JadeNightState> = {
         // Constraint: Snack CANNOT be placed in new slot (must go to existing plate)
         if (isSnack) return INVALID_MOVE;
 
-        if (player.waitingArea.length >= 5) return INVALID_MOVE;
+      waitingSlot.snack = snack;
 
-        const newItem: WaitingItem = {
-          id: `slot-${Date.now()}-${Math.random()}`,
-          tableware: card,
-          snack: undefined,
-        };
-        player.waitingArea.push(newItem);
-      }
+      // Remove snack from public slot
+      slot.snack = undefined;
 
       // Remove from public slot
       if (isSnack) {

@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Duplicate enum values to avoid importing from config.ts (which depends on boardgame.io)
+// Enums
 enum CardColor {
   RED = "red",
   GREEN = "green",
@@ -37,10 +37,11 @@ interface Card {
     shapes: CardShapeType[];
     temps: CardTempType[];
   };
-  level: number;
+  level: number; // For Snacks, strictly 1. For Plates, 1-3.
   description?: string;
 }
 
+// 命名映射表
 const SNACK_NAMES: Record<string, string> = {
   // 基础点心 (36张: 3色 x 3形 x 2温 x 2重复)
   "red-circle-warm": "玫瑰赤豆糕",
@@ -100,14 +101,15 @@ function generateDecks() {
       for (const s of shapes) {
         for (const t of temps) {
           const key = `${c}-${s}-${t}`;
-          const name = SNACK_NAMES[key] || `${c} ${s} ${t} 点心`;
+          const name = SNACK_NAMES[key] || `${getColorName(c)}${getShapeName(s)}${getTempName(t)}`;
+
           snackDeck.push({
             id: `snack-basic-${idCounter++}`,
             type: "Snack",
             name: name,
             attributes: { colors: [c], shapes: [s], temps: [t] },
-            level: 1,
-            description: "精致点心",
+            level: 1, // 点心本身没有等级，视为基础物品
+            description: "美味的点心，需放置在食器上。",
           });
         }
       }
@@ -279,27 +281,46 @@ function generateDecks() {
     const shapePair = l2_shapes_combinations[i % 3];
     const color = colors[i % 3];
     const temp = temps[i % 2];
+
     tablewareDeck.push({
-      id: `plate-L2-S-${idCounter++}`,
+      id: `plate-L2-DualColor-${idCounter++}`,
       type: "Tableware",
-      name: PLATE_NAMES.L2,
-      attributes: { colors: [color], shapes: shapePair, temps: [temp] },
+      name: `${PLATE_NAMES.L2}·双色`,
+      attributes: { colors: colorPair, shapes: [shape], temps: [temp] },
       level: 2,
-      description: "双形兼容",
+      description: "做工精良。兼容两种颜色。",
     });
   }
 
-  // C. Dual Temps (4 cards)
+  // B. 双形盘 (4 Cards)
+  for (let i = 0; i < 4; i++) {
+    const shapePair = l2_shapes_pairs[i % 3]; // 轮询3种形状组合
+    const color = colors[i % 3];
+    const temp = temps[i % 2]; // 温度交替
+
+    tablewareDeck.push({
+      id: `plate-L2-DualShape-${idCounter++}`,
+      type: "Tableware",
+      name: `${PLATE_NAMES.L2}·双形`,
+      attributes: { colors: [color], shapes: shapePair, temps: [temp] },
+      level: 2,
+      description: "做工精良。兼容两种形状。",
+    });
+  }
+
+  // C. 全温盘 (4 Cards)
+  // 逻辑：温度全兼容 (Warm + Cold)
   for (let i = 0; i < 4; i++) {
     const color = colors[i % 3];
-    const shape = shapes[i % 3];
+    const shape = shapes[i % 3]; // 形状倒序轮询，增加差异
+
     tablewareDeck.push({
-      id: `plate-L2-T-${idCounter++}`,
+      id: `plate-L2-OmniTemp-${idCounter++}`,
       type: "Tableware",
-      name: PLATE_NAMES.L2,
+      name: `${PLATE_NAMES.L2}·温润`,
       attributes: { colors: [color], shapes: [shape], temps: [CardTemp.WARM, CardTemp.COLD] },
       level: 2,
-      description: "全温兼容",
+      description: "做工精良。冷热皆宜，材质分必得。",
     });
   }
 
@@ -308,27 +329,37 @@ function generateDecks() {
   for (let i = 0; i < 3; i++) {
     const shape = shapes[i % 3];
     const temp = temps[i % 2];
+
     tablewareDeck.push({
-      id: `plate-L3-C-${idCounter++}`,
+      id: `plate-L3-Prismatic-${idCounter++}`,
       type: "Tableware",
       name: "流光盘",
-      attributes: { colors: Object.values(CardColor), shapes: [shape], temps: [temp] },
+      attributes: {
+        colors: Object.values(CardColor), // All Colors
+        shapes: [shape],
+        temps: [temp],
+      },
       level: 3,
-      description: "全色兼容",
+      description: "稀世珍宝。流光溢彩，兼容所有颜色。",
     });
   }
 
   // B. All Shapes (流光盘 - 全形兼容) (3张)
   for (let i = 0; i < 3; i++) {
     const color = colors[i % 3];
-    const temp = temps[i % 2];
+    const temp = temps[i % 2]; // 不同于上面的温度选择逻辑，尽量错开
+
     tablewareDeck.push({
-      id: `plate-L3-S-${idCounter++}`,
+      id: `plate-L3-HundredFlowers-${idCounter++}`,
       type: "Tableware",
       name: "百花盘",
-      attributes: { colors: [color], shapes: Object.values(CardShape), temps: [temp] },
+      attributes: {
+        colors: [color],
+        shapes: Object.values(CardShape), // All Shapes
+        temps: [temp],
+      },
       level: 3,
-      description: "全形兼容",
+      description: "稀世珍宝。千姿百态，兼容所有形状。",
     });
   }
 
@@ -337,6 +368,12 @@ function generateDecks() {
 // Generate and save to file
 const decks = generateDecks();
 const outputPath = path.join(__dirname, "../src/game/decks.json");
+
+// Ensure directory exists
+const dir = path.dirname(outputPath);
+if (!fs.existsSync(dir)) {
+  fs.mkdirSync(dir, { recursive: true });
+}
 
 fs.writeFileSync(outputPath, JSON.stringify(decks, null, 2), "utf-8");
 console.log(`Deck data generated successfully to: ${outputPath}`);

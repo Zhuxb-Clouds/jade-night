@@ -46,7 +46,10 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getWSUrl = () => {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${hostname}:9000`;
+    // 如果是本地地址 port是9000，否则6558
+    const port = hostname === "localhost" || hostname === "127.0.0.1" ? 9000 : 6558;
+
+    return `${protocol}//${hostname}:${port}`;
   };
 
   // Initialize WebSocket connection
@@ -130,7 +133,9 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshRooms = useCallback(async () => {
     try {
       const hostname = window.location.hostname;
-      const apiUrl = `http://${hostname}:9000/api/rooms`;
+      // 如果是本地地址 port是9000，否则6558
+      const port = hostname === "localhost" || hostname === "127.0.0.1" ? 9000 : 6558;
+      const apiUrl = `http://${hostname}:${port}/api/rooms`;
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch rooms");
       const rooms = await response.json();
