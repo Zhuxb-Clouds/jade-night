@@ -1,7 +1,6 @@
-import React from 'react';
-import { P2PProvider } from './network/P2PContext';
-import { Lobby } from './components/Lobby';
-import { Board } from './components/Board';
+import { P2PProvider } from "./network/P2PContext";
+import { Lobby } from "./components/Lobby";
+import { Board } from "./components/Board";
 
 function App() {
   return (
