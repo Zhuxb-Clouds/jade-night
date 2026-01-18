@@ -46,7 +46,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getWSUrl = () => {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${hostname}:9000`;
+    return `${protocol}//${hostname}:6558`;
   };
 
   // Initialize WebSocket connection
