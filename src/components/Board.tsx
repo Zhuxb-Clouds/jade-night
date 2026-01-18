@@ -658,15 +658,14 @@ export const Board: React.FC = () => {
     const draggedId = active.id as string;
     const dragType = active.data.current?.type; // 'card' or 'waitingItem'
 
-    // Case 1: Dragging Card from Public Area (Take Card)
+    // Case 1: Dragging Snack from Public Area (Take Snack - must place on plate)
     // Note: DraggableCard doesn't put 'type' in data, let's fix that or assume default
     if (!dragType || dragType === "card") {
-      // Assuming logic from DraggableCard
-      if (over.id === "waiting-area") {
-        sendMove("takeCard", { cardId: draggedId, targetSlotId: undefined });
-      } else if (over.data.current?.type === "slot") {
+      // Snacks must be placed on an existing plate slot
+      if (over.data.current?.type === "slot") {
         sendMove("takeCard", { cardId: draggedId, targetSlotId: over.id });
       }
+      // Cannot place snack in waiting area without target slot
       return;
     }
 
@@ -685,22 +684,13 @@ export const Board: React.FC = () => {
   };
 
   const renderPublicSlot = (slot: PublicSlot) => {
-    // If slot has Snack, it's on top of Tableware
-    // Only the top card is draggable
-
+    // Public slots now only contain snacks
     if (slot.snack) {
-      // Snack is available
-      // If Tableware is also there, render it as background
       return (
         <div
           key={slot.id}
-          className="relative w-24 h-32 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
+          className="relative w-24 h-32 flex items-center justify-center bg-pink-900/30 rounded border border-pink-700"
         >
-          {slot.tableware && (
-            <div className="absolute opacity-50 pointer-events-none transform scale-90">
-              <CardView card={slot.tableware} />
-            </div>
-          )}
           {isMyTurn && myAP > 0 ? (
             <DraggableCard card={slot.snack} />
           ) : (
@@ -708,31 +698,22 @@ export const Board: React.FC = () => {
           )}
         </div>
       );
-    } else if (slot.tableware) {
-      // Only Tableware available
-      return (
-        <div
-          key={slot.id}
-          className="relative w-24 h-32 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
-        >
-          {isMyTurn && myAP > 0 ? (
-            <DraggableCard card={slot.tableware} />
-          ) : (
-            <CardView card={slot.tableware} />
-          )}
-        </div>
-      );
     } else {
-      // Empty slot (should be refilled automatically, but just in case)
+      // Empty slot
       return (
         <div
           key={slot.id}
           className="w-24 h-32 bg-gray-800/20 rounded border border-gray-700 flex items-center justify-center"
         >
-          <span className="text-xs text-gray-600">Empty</span>
+          <span className="text-xs text-gray-600">空</span>
         </div>
       );
     }
+  };
+
+  // Handler for drawing a plate from the deck
+  const handleDrawPlate = () => {
+    sendMove("drawPlate");
   };
 
   return (
@@ -825,11 +806,35 @@ export const Board: React.FC = () => {
                 </div>
               ) : (
                 <div className="w-full">
-                  <div className="text-center text-gray-400 text-sm mb-2">
-                    Public Area (8 Slots)
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {G.publicArea.map((slot: PublicSlot) => renderPublicSlot(slot))}
+                  <div className="flex justify-center items-start gap-8">
+                    {/* Snack Slots (5 slots) */}
+                    <div>
+                      <div className="text-center text-pink-400 text-sm mb-2">点心区 (5 Slots)</div>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {G.publicArea.map((slot: PublicSlot) => renderPublicSlot(slot))}
+                      </div>
+                    </div>
+
+                    {/* Plate Deck */}
+                    <div>
+                      <div className="text-center text-stone-400 text-sm mb-2">盘子牌堆</div>
+                      <div
+                        onClick={isMyTurn && myAP > 0 ? handleDrawPlate : undefined}
+                        className={`w-24 h-32 bg-stone-800/50 rounded border-2 border-stone-600 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          isMyTurn && myAP > 0
+                            ? "hover:border-stone-400 hover:bg-stone-700/50 hover:scale-105"
+                            : "opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        <div className="text-3xl mb-1">🍽️</div>
+                        <span className="text-xs text-stone-400">
+                          剩余: {G.tablewareDeck.length}
+                        </span>
+                        {isMyTurn && myAP > 0 && (
+                          <span className="text-[10px] text-stone-500 mt-1">点击摸取</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
