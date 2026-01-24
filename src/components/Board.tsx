@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useP2P } from "../network/P2PContext";
 import {
   Card as CardType,
   WaitingItem,
   PublicSlot,
+  PendingGift,
   calculatePairingScore,
   calculateFinalScore,
+  calculateSinglePairingScore,
 } from "../game/config";
 import { DndContext, useDraggable, useDroppable, DragEndEvent } from "@dnd-kit/core";
 
@@ -194,9 +196,11 @@ const DroppableSlot = ({
 const DroppableWaitingArea = ({
   children,
   isCurrentPlayer,
+  adjustModeActive = false,
 }: {
   children: React.ReactNode;
   isCurrentPlayer: boolean;
+  adjustModeActive?: boolean;
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: "waiting-area",
@@ -207,11 +211,11 @@ const DroppableWaitingArea = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed transition-colors ${
+      className={`flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed transition-all ${
         isOver ? "border-emerald-400 bg-emerald-900/20" : "border-gray-700"
-      }`}
+      } ${adjustModeActive ? "pt-6 pr-6" : ""}`}
     >
-      <div className="text-xs text-gray-500 mb-1">Waiting Area (Max 5)</div>
+      <div className="text-xs text-gray-500 mb-1">Waiting Area (Max 5) {adjustModeActive && <span className="text-amber-400">- 拖拽点心到其他盘子</span>}</div>
       <div className="flex flex-wrap">{children}</div>
     </div>
   );
@@ -275,9 +279,50 @@ const PlayerArea: React.FC<{
   playerId: string;
   playerState: any;
   isCurrentPlayer: boolean;
-}> = ({ playerId, playerState, isCurrentPlayer }) => {
+  adjustModeActive?: boolean;
+  giftingSnack?: { snackId: string; snack: CardType } | null;
+  onGiftTarget?: (targetPlayerId: string, targetSlotId: string) => void;
+}> = ({ playerId, playerState, isCurrentPlayer, adjustModeActive = false, giftingSnack = null, onGiftTarget }) => {
   // Calculate real-time score
   const scoreData = playerState ? calculateFinalScore(playerState) : null;
+
+  // 在调整模式下，分离显示点心和盘子
+  const renderAdjustModeItem = (item: WaitingItem) => {
+    if (!item.tableware) return null;
+    
+    const pairingScore = item.snack ? calculatePairingScore(item) : 0;
+    
+    return (
+      <div className="relative">
+        {/* 盘子（底层） */}
+        <CardView key={`plate-${item.id}`} card={item.tableware} />
+        
+        {/* 点心（浮动在右上方，半透明，完整大小） */}
+        {item.snack && (
+          <div className="absolute -top-4 -right-4 z-20">
+            <DraggableSnackInAdjustMode slotId={item.id} snack={item.snack} />
+          </div>
+        )}
+        
+        {/* 配对分徽章 */}
+        {pairingScore > 0 && (
+          <div
+            className={`absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg z-30
+            ${
+              pairingScore >= 3
+                ? "bg-emerald-500 text-white"
+                : pairingScore >= 2
+                  ? "bg-amber-500 text-white"
+                  : "bg-gray-500 text-white"
+            }`}
+            title={`配对分: ${pairingScore}`}
+          >
+            {pairingScore}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Render a waiting item with optional pairing score badge
   const renderWaitingItem = (
@@ -369,24 +414,66 @@ const PlayerArea: React.FC<{
           <div className="flex gap-4">
             {/* Waiting Area */}
             {isCurrentPlayer ? (
-              <DroppableWaitingArea isCurrentPlayer={isCurrentPlayer}>
+              <DroppableWaitingArea isCurrentPlayer={isCurrentPlayer} adjustModeActive={adjustModeActive}>
                 {playerState.waitingArea.length === 0 && (
                   <span className="text-gray-600 text-xs p-2">Drag cards here</span>
                 )}
                 {playerState.waitingArea.map((item: WaitingItem) => (
                   <DroppableSlot key={item.id} slot={item} isCurrentPlayer={isCurrentPlayer}>
-                    {renderWaitingItem(item, true, true)}{" "}
-                    {/* Enable dragging and show pairing score */}
+                    {adjustModeActive 
+                      ? renderAdjustModeItem(item)
+                      : renderWaitingItem(item, true, true)
+                    }
                   </DroppableSlot>
                 ))}
               </DroppableWaitingArea>
             ) : (
-              <div className="flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed border-gray-700">
-                <div className="text-xs text-gray-500 mb-1">Waiting Area (Max 5)</div>
+              <div className={`flex-1 min-h-[120px] bg-gray-900/50 rounded p-2 border border-dashed transition-all ${
+                giftingSnack ? "border-purple-400 bg-purple-900/10" : "border-gray-700"
+              }`}>
+                <div className="text-xs text-gray-500 mb-1">
+                  Waiting Area (Max 5)
+                  {giftingSnack && <span className="text-purple-400 ml-2">← 点击空盘子接收赠尝</span>}
+                </div>
                 <div className="flex flex-wrap">
-                  {playerState.waitingArea.map((item: WaitingItem) => (
-                    <div key={item.id}>{renderWaitingItem(item, false, true)}</div>
-                  ))}
+                  {playerState.waitingArea.map((item: WaitingItem) => {
+                    // 检查是否是可接收赠尝的目标（有盘子但没点心）
+                    const isGiftableTarget = giftingSnack && item.tableware && !item.snack;
+                    // 计算预估配对分
+                    let estimatedScore = 0;
+                    if (isGiftableTarget && giftingSnack) {
+                      estimatedScore = calculateSinglePairingScore(item.tableware!, giftingSnack.snack);
+                    }
+                    const isValidTarget = isGiftableTarget && estimatedScore >= 1;
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`relative ${isGiftableTarget ? "cursor-pointer" : ""}`}
+                        onClick={() => {
+                          if (isValidTarget && onGiftTarget) {
+                            onGiftTarget(playerId, item.id);
+                          }
+                        }}
+                      >
+                        {renderWaitingItem(item, false, true)}
+                        {/* 赠尝目标指示 */}
+                        {isGiftableTarget && (
+                          <div className={`absolute inset-0 rounded-lg border-2 transition-all ${
+                            isValidTarget 
+                              ? "border-purple-400 bg-purple-500/20 hover:bg-purple-500/40" 
+                              : "border-red-400 bg-red-500/20"
+                          }`}>
+                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold px-2 py-1 rounded ${
+                              isValidTarget ? "bg-purple-600 text-white" : "bg-red-600 text-white"
+                            }`}>
+                              {isValidTarget ? `+${estimatedScore}分` : "不匹配"}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -475,6 +562,54 @@ const PlayerArea: React.FC<{
   );
 };
 
+// 调整模式下可拖拽的点心组件 - 完整大小半透明显示
+const DraggableSnackInAdjustMode = ({
+  slotId,
+  snack,
+}: {
+  slotId: string;
+  snack: any;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `snack-adjust-${slotId}`,
+    data: { type: "adjustSnack", fromSlotId: slotId, snack },
+  });
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1000,
+        cursor: "grabbing",
+      }
+    : { cursor: "grab" };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...listeners} 
+      {...attributes}
+      className={`transition-all duration-200 ${isDragging ? "scale-105" : "hover:scale-102"}`}
+    >
+      {/* 半透明的完整点心卡片，带发光边框 */}
+      <div 
+        className={`
+          relative rounded-lg transition-all
+          ${isDragging 
+            ? "opacity-100 shadow-2xl shadow-amber-400/60" 
+            : "opacity-75 hover:opacity-90 shadow-lg shadow-amber-400/40 animate-glow"
+          }
+        `}
+      >
+        <CardView card={snack} />
+        {/* 拖拽提示叠加层 */}
+        <div className={`absolute inset-0 rounded-lg border-2 pointer-events-none ${
+          isDragging ? "border-amber-300" : "border-amber-400/60"
+        }`} />
+      </div>
+    </div>
+  );
+};
+
 // Define DraggableWaitingItem to handle dragging existing items
 const DraggableWaitingItem = ({
   item,
@@ -504,37 +639,22 @@ const DraggableWaitingItem = ({
 
 const GrandmotherStatus: React.FC<{
   players: Record<string, any>;
-  rewardDeck: any[];
+  l2Deck: any[];
   jadeGiven: boolean;
-  myOfferingCount: number;
-  myTeaTokens: number;
-  isMyTurn: boolean;
-  myAP: number;
-  onServeTea: () => void;
 }> = ({
   players,
-  rewardDeck,
+  l2Deck,
   jadeGiven,
-  myOfferingCount,
-  myTeaTokens,
-  isMyTurn,
-  myAP,
-  onServeTea,
 }) => {
   const allPlayers = Object.values(players);
   const totalOfferings = allPlayers.reduce((sum: number, p: any) => sum + p.offeringArea.length, 0);
 
-  // Check L2 plates remaining in reward deck
-  const l2PlatesRemaining = rewardDeck.filter((c: any) => c.level === 2).length;
+  // Check L2 plates remaining in l2Deck
+  const l2PlatesRemaining = l2Deck.length;
   const allL2Distributed = l2PlatesRemaining === 0;
 
   // Game end condition check: 仅检查L2盘子是否全部发完
   const endConditionMet = allL2Distributed;
-
-  // 敬茶条件检查: 需要茶券 >= (9 - 奉献数)，且需要3AP
-  const baseCost = 9;
-  const actualCost = Math.max(0, baseCost - myOfferingCount);
-  const canServeTea = !jadeGiven && myTeaTokens >= actualCost && isMyTurn && myAP >= 3;
 
   return (
     <div className="w-64 bg-stone-900 border-r border-stone-800 p-6 flex flex-col gap-6 text-stone-200 shadow-2xl z-20 shrink-0">
@@ -575,15 +695,10 @@ const GrandmotherStatus: React.FC<{
         )}
       </div>
 
-      {/* 敬茶按钮 */}
-      <ServeTeaButton
-        canServeTea={canServeTea}
-        myOfferingCount={myOfferingCount}
-        myTeaTokens={myTeaTokens}
-        jadeGiven={jadeGiven}
-        isMyTurn={isMyTurn}
-        onServeTea={onServeTea}
+      {/* 玉盏状态 */}
+      <JadeChaliceStatus
         players={players}
+        jadeGiven={jadeGiven}
       />
 
       {/* 奉献规则说明 */}
@@ -610,6 +725,87 @@ const GrandmotherStatus: React.FC<{
 };
 
 // --- Overlay Components ---
+
+// 赠尝响应弹窗
+const GiftResponseModal: React.FC<{
+  pendingGift: PendingGift | null;
+  myPlayerId: string;
+  myTeaTokens: number;
+  hasJadeChalice: boolean;
+  onAccept: () => void;
+  onReject: () => void;
+}> = ({ pendingGift, myPlayerId, myTeaTokens, hasJadeChalice, onAccept, onReject }) => {
+  if (!pendingGift || pendingGift.toPlayerId !== myPlayerId) return null;
+
+  // 玉盏持有者拒绝需要2茶券，普通玩家只需1茶券
+  const rejectCost = hasJadeChalice ? 2 : 1;
+  const canReject = myTeaTokens >= rejectCost;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-gray-900 border-2 border-purple-500 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in zoom-in duration-300">
+        <div className="text-center mb-4">
+          <div className="text-purple-400 text-xl mb-2">🎁 收到赠尝</div>
+          <div className="text-gray-300">
+            玩家 <span className="text-amber-400 font-bold">{pendingGift.fromPlayerId}</span> 想送你一个点心
+          </div>
+          {hasJadeChalice && (
+            <div className="text-amber-400 text-sm mt-2 flex items-center justify-center gap-1">
+              <span>🏆</span>
+              <span>玉盏持有者：拒绝代价翻倍</span>
+            </div>
+          )}
+        </div>
+
+        {/* 点心卡片预览 */}
+        <div className="flex justify-center my-4">
+          <div className="transform scale-110">
+            <CardView card={pendingGift.snack} />
+          </div>
+        </div>
+
+        <div className="text-center mb-4">
+          <div className="text-sm text-gray-400">预计配对分</div>
+          <div className={`text-2xl font-bold ${
+            pendingGift.pairingScore >= 2 ? "text-emerald-400" : "text-amber-400"
+          }`}>
+            +{pendingGift.pairingScore} 分
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={onAccept}
+            className="py-3 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all hover:scale-105"
+          >
+            ✓ 接受
+            <div className="text-xs font-normal opacity-80">收下这份心意</div>
+          </button>
+          <button
+            onClick={onReject}
+            disabled={!canReject}
+            className={`py-3 px-4 rounded-lg font-bold transition-all ${
+              canReject 
+                ? "bg-rose-600 hover:bg-rose-500 text-white hover:scale-105" 
+                : "bg-gray-700 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            ✗ 拒绝
+            <div className="text-xs font-normal opacity-80">
+              {canReject ? `消耗 ${rejectCost} 茶券` : "茶券不足"}
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 text-center text-xs text-gray-500">
+          <div>你当前有 {myTeaTokens} 枚茶券</div>
+          {canReject && <div className="text-amber-400 mt-1">拒绝后双方都有损失（你-{rejectCost}茶券，对方-1AP）</div>}
+          {!canReject && <div className="text-rose-400 mt-1">茶券不足（需要{rejectCost}枚），无法拒绝</div>}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const GameNotification: React.FC<{ notification: any }> = ({ notification }) => {
   if (!notification) return null;
@@ -670,85 +866,202 @@ const GameNotification: React.FC<{ notification: any }> = ({ notification }) => 
   );
 };
 
-// 敬茶按钮组件 - 替代原来的L3选择弹窗
-const ServeTeaButton: React.FC<{
-  canServeTea: boolean;
-  myOfferingCount: number;
-  myTeaTokens: number;
-  jadeGiven: boolean;
-  isMyTurn: boolean;
-  onServeTea: () => void;
+// 玉盏状态组件 - 显示玉盏流动规则和当前持有者
+const JadeChaliceStatus: React.FC<{
   players: Record<string, any>;
-}> = ({ canServeTea, myOfferingCount, myTeaTokens, jadeGiven, isMyTurn, onServeTea, players }) => {
-  // 计算实际需要的茶券数量：基础9个，每1个奉献减少1个
-  const baseCost = 9;
-  const actualCost = Math.max(0, baseCost - myOfferingCount);
-  const meetsTeaReq = myTeaTokens >= actualCost;
-
+  jadeGiven: boolean;
+}> = ({ players, jadeGiven }) => {
   // 查找玉盏持有者
   const jadeHolderId = jadeGiven
     ? Object.keys(players).find((pid) => players[pid].hasJadeChalice)
     : null;
 
-  // 玉盏已发放，显示持有者信息
-  if (jadeGiven) {
-    return (
-      <div className="bg-gradient-to-r from-amber-900/50 to-stone-800/50 border border-amber-600 rounded-lg p-4 mt-4">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="text-3xl">🏆</span>
-          <div className="text-amber-400 font-bold font-serif text-lg">玉盏已归属</div>
-        </div>
-        <div className="text-center text-amber-300 text-sm">Player {jadeHolderId} 持有玉盏</div>
-        <div className="text-center text-stone-400 text-xs mt-2">奉献分×2</div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gradient-to-r from-amber-900/30 to-stone-800/50 border border-amber-700/50 rounded-lg p-4 mt-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-amber-400 font-bold font-serif text-lg">敬茶获取玉盏</div>
+        <div className="text-amber-400 font-bold font-serif text-lg">流动的玉盏</div>
         <span className="text-2xl">🏆</span>
       </div>
 
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 text-sm text-stone-400">
-          <span>ℹ️</span>
-          <span>基础9茶券，奉献每盘减1，消耗3AP</span>
+      {jadeGiven && jadeHolderId ? (
+        <div className="space-y-2">
+          <div className="text-center bg-amber-900/50 rounded-lg p-3 border border-amber-600">
+            <div className="text-amber-300 text-sm mb-1">当前持有者</div>
+            <div className="text-amber-400 font-bold text-xl">玩家 {jadeHolderId}</div>
+          </div>
+          <div className="text-xs text-stone-400 space-y-1">
+            <div>• 回合开始：+1 茶券</div>
+            <div>• 拒绝赠尝：需 2 茶券</div>
+            <div>• 终局：奉献分×2</div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-stone-300">
-          <span>🍵</span>
-          <span>
-            奉献{myOfferingCount}盘 → 需{actualCost}茶券
-          </span>
+      ) : (
+        <div className="space-y-2">
+          <div className="text-center text-stone-400 text-sm py-2">
+            玉盏尚未归属
+          </div>
+          <div className="text-xs text-amber-400/80 bg-stone-800/50 p-2 rounded border border-stone-700">
+            💡 完成 3分+ 奉献即可夺取玉盏！
+          </div>
         </div>
-        <div
-          className={`flex items-center gap-2 text-sm ${
-            meetsTeaReq ? "text-emerald-400" : "text-stone-400"
-          }`}
-        >
-          <span>{meetsTeaReq ? "✓" : "○"}</span>
-          <span>
-            当前茶券: {myTeaTokens} / 需要: {actualCost}
-          </span>
+      )}
+
+      <div className="mt-3 text-[10px] text-stone-500 border-t border-stone-700/50 pt-2">
+        高质量奉献(≥3分)可从他人手中夺取
+      </div>
+    </div>
+  );
+};
+
+// --- 游戏规则弹窗组件 ---
+const GameRulesModal: React.FC<{ show: boolean; onClose: () => void }> = ({ show, onClose }) => {
+  if (!show) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-stone-900 border-2 border-amber-600 rounded-xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 标题栏 */}
+        <div className="bg-amber-800 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white">📜 玉盏春夜宴 - 游戏规则</h2>
+          <button
+            onClick={onClose}
+            className="text-white/70 hover:text-white text-2xl font-bold transition-colors"
+          >
+            ×
+          </button>
         </div>
-        <div className="flex items-center gap-2 text-sm text-rose-300">
-          <span>⚡</span>
-          <span>消耗 3 AP</span>
+        
+        {/* 规则内容 - 可滚动区域 */}
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-60px)] text-stone-200 space-y-6">
+          {/* 故事背景 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🏮 故事背景</h3>
+            <p className="text-sm text-stone-300 italic">
+              每年暖春时节夜里，顾府后院总会点灯开宴，顾府的女子们莺莺燕燕一起聊天、唱歌、品尝点心。
+              席间，顾府老夫人会将自己的玉盏给参加宴席的一个晚辈，表达她的喜爱之情。
+            </p>
+          </section>
+
+          {/* 游戏目标 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🎯 游戏目标</h3>
+            <p className="text-sm">
+              通过配对<strong>食器</strong>与<strong>点心</strong>获取<strong>配对分</strong>，最终得分最高者获胜。
+            </p>
+            <div className="mt-2 text-sm bg-stone-800 p-3 rounded">
+              <strong>配对分规则：</strong>食器上的每个"圈"若被点心的"点"填满，即产生 <span className="text-emerald-400 font-bold">1点</span> 配对分。
+              <br/>食器分为 L1/L2/L3 三个等级，等级越高圈越多，配对分上限越高。
+            </div>
+          </section>
+
+          {/* 区域说明 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">📍 区域说明</h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-rose-400">公共区</strong>：可取用的点心和食器牌堆
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-amber-400">等待区</strong>：暂存区，上限5格
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-emerald-400">个人区</strong>：品鉴完成的点心，计入配对分
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-purple-400">奉献区</strong>：献给老太君的点心
+              </div>
+            </div>
+          </section>
+
+          {/* 行动点 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">⚡ 行动点 (AP)</h3>
+            <p className="text-sm mb-2">每回合获得 <span className="text-emerald-400 font-bold">3点 AP</span>。可消耗茶券 🍵 获得额外 +1 AP。</p>
+          </section>
+
+          {/* 可执行动作 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🎮 可执行动作</h3>
+            <div className="space-y-3 text-sm">
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-cyan-400">A. 拿取 (1 AP)</strong>
+                <p className="text-stone-400 mt-1">从公共区拿取食器/点心放入等待区，或将点心放到等待区的空盘子上。</p>
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-emerald-400">B. 品鉴 (1 AP)</strong>
+                <p className="text-stone-400 mt-1">将等待区的"食器+点心"移入个人区，配对分计入最终得分。每回合限1次。</p>
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-purple-400">C. 奉献 (1 AP)</strong>
+                <p className="text-stone-400 mt-1">
+                  将配对分≥2的组合献给老太君，获得1枚茶券和更高级食器。
+                  <br/>配对分≥3时：额外+1茶券，获得/夺取【玉盏】！
+                </p>
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-amber-400">D. 调整模式 (1 AP)</strong>
+                <p className="text-stone-400 mt-1">进入调整模式后可自由移动等待区的点心，每回合限1次。</p>
+              </div>
+              <div className="bg-stone-800 p-3 rounded">
+                <strong className="text-rose-400">E. 赠尝 (1 AP)</strong>
+                <p className="text-stone-400 mt-1">
+                  将公共区点心放到对手的空盘上（配对分≥1）。对手可接受或消耗茶券拒绝。
+                  <br/>玉盏持有者拒绝需消耗 <span className="text-rose-300 font-bold">2枚茶券</span>！
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* 茶券 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🍵 茶券</h3>
+            <div className="text-sm space-y-1">
+              <p>• 个人区每完成 <span className="font-bold">2盘</span> 点心，获得1枚茶券</p>
+              <p>• 奉献时获得1枚茶券，配对分≥3时额外+1</p>
+              <p>• 可消耗茶券获得 +1 AP</p>
+              <p>• 可消耗茶券拒绝赠尝</p>
+              <p>• 游戏结束时，剩余茶券计入得分</p>
+            </div>
+          </section>
+
+          {/* 玉盏 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🏆 流动的玉盏</h3>
+            <div className="text-sm bg-amber-900/30 border border-amber-600/50 p-3 rounded">
+              <p><strong>获取：</strong>奉献配对分≥3的点心时获得玉盏（可从他人手中夺取）</p>
+              <p className="mt-2"><strong>持有特权：</strong></p>
+              <ul className="list-disc list-inside text-stone-300 ml-2">
+                <li>每回合开始 +1 茶券</li>
+                <li>游戏结束时，奉献区分数 <span className="text-amber-400 font-bold">×2</span></li>
+              </ul>
+              <p className="mt-2"><strong>持有代价：</strong>拒绝赠尝需消耗 2枚茶券</p>
+            </div>
+          </section>
+
+          {/* 游戏结束 */}
+          <section>
+            <h3 className="text-lg font-bold text-amber-400 mb-2 border-b border-amber-600/30 pb-1">🏁 游戏结束与计分</h3>
+            <div className="text-sm">
+              <p className="mb-2"><strong>结束条件：</strong>所有 L2 食器分发完毕后的下一轮结束</p>
+              <div className="bg-stone-800 p-3 rounded mt-2">
+                <strong>最终得分 = </strong>
+                <span className="text-emerald-400">个人区配对分</span> + 
+                <span className="text-purple-400"> 奉献区数量</span>
+                <span className="text-amber-400">(玉盏×2)</span> + 
+                <span className="text-cyan-400"> 剩余茶券</span> - 
+                <span className="text-rose-400"> 等待区滞留×2</span>
+              </div>
+              <p className="mt-2 text-stone-400">平局时：奉献数多者胜 → 个人区盘数少者胜</p>
+            </div>
+          </section>
         </div>
       </div>
-
-      <button
-        onClick={onServeTea}
-        disabled={!canServeTea || !isMyTurn}
-        className={`w-full py-2 px-4 rounded-lg font-bold transition-all ${
-          canServeTea && isMyTurn
-            ? "bg-amber-600 hover:bg-amber-500 text-white hover:scale-[1.02] shadow-lg"
-            : "bg-stone-700 text-stone-500 cursor-not-allowed"
-        }`}
-      >
-        {canServeTea ? "🍵 敬茶" : "条件未满足"}
-      </button>
     </div>
   );
 };
@@ -839,7 +1152,7 @@ const GameOverScreen: React.FC<{ gameover: any; players: any }> = ({ gameover, p
 };
 
 export const Board: React.FC = () => {
-  const { gameState, sendMove, playerId, isConnected, roomId, isHost, connectedPlayerCount } =
+  const { gameState, sendMove, respondToGift, playerId, isConnected, roomId, isHost, connectedPlayerCount } =
     useP2P(); // Destructure connectedPlayerCount
 
   if (!isConnected || !gameState) {
@@ -852,16 +1165,61 @@ export const Board: React.FC = () => {
   const isMyTurn = ctx.currentPlayer === myPlayerId;
   const myAP = G.players[myPlayerId]?.actionPoints || 0;
   const myTeaTokens = G.players[myPlayerId]?.teaTokens || 0;
-  const myOfferingCount = G.players[myPlayerId]?.offeringArea?.length || 0;
+  const adjustModeActive = G.players[myPlayerId]?.adjustModeActive || false;
+  const adjustModeUsedThisTurn = G.players[myPlayerId]?.adjustModeUsedThisTurn || false;
+
+  // 赠尝模式状态：选中的公共区点心
+  const [giftingSnack, setGiftingSnack] = useState<{ snackId: string; snack: CardType } | null>(null);
+  
+  // 规则弹窗显示状态
+  const [showRules, setShowRules] = useState(false);
 
   // Start Game Handler
   const handleStartGame = () => {
     sendMove("startGame", connectedPlayerCount); // Pass connected count
   };
 
-  // 敬茶 Handler
-  const handleServeTea = () => {
-    sendMove("serveTea");
+  // 激活调整模式 Handler
+  const handleActivateAdjustMode = () => {
+    sendMove("activateAdjustMode");
+  };
+
+  // 关闭调整模式 Handler
+  const handleDeactivateAdjustMode = () => {
+    sendMove("deactivateAdjustMode");
+  };
+
+  // 赠尝 Handler：选择点心
+  const handleSelectGiftSnack = (snackId: string, snack: CardType) => {
+    if (adjustModeActive) return;
+    setGiftingSnack({ snackId, snack });
+  };
+
+  // 赠尝 Handler：取消选择
+  const handleCancelGifting = () => {
+    setGiftingSnack(null);
+  };
+
+  // 赠尝 Handler：确认赠送到目标
+  const handleConfirmGift = (targetPlayerId: string, targetSlotId: string) => {
+    if (!giftingSnack) return;
+    sendMove("giftSnack", { 
+      snackId: giftingSnack.snackId, 
+      targetPlayerId, 
+      targetSlotId 
+    });
+    setGiftingSnack(null);
+  };
+
+  // 赠尝响应 Handler：接受
+  // 使用专门的 respondToGift 函数，绕过 boardgame.io 的权限检查
+  const handleAcceptGift = () => {
+    respondToGift("accept");
+  };
+
+  // 赠尝响应 Handler：拒绝
+  const handleRejectGift = () => {
+    respondToGift("reject");
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -887,15 +1245,32 @@ export const Board: React.FC = () => {
       const item = active.data.current?.item;
       if (!item) return;
 
+      // 调整模式下不允许品鉴和奉献
+      if (adjustModeActive) return;
+
       if (over.id === "personal-area") {
         sendMove("taste", { slotId: item.id });
       } else if (over.id === "offering-area") {
         sendMove("offer", { slotId: item.id });
       } else if (over.data.current?.type === "slot") {
-        // 调整点心位置（不消耗AP）
+        // 调整点心位置（需要调整模式）
         const toSlotId = over.id as string;
         if (item.snack && toSlotId !== item.id) {
           sendMove("adjustSnack", { fromSlotId: item.id, toSlotId: toSlotId });
+        }
+      }
+      return;
+    }
+
+    // Case 3: Dragging snack in adjust mode
+    if (dragType === "adjustSnack") {
+      const fromSlotId = active.data.current?.fromSlotId;
+      if (!fromSlotId) return;
+
+      if (over.data.current?.type === "slot") {
+        const toSlotId = over.id as string;
+        if (toSlotId !== fromSlotId) {
+          sendMove("adjustSnack", { fromSlotId, toSlotId });
         }
       }
       return;
@@ -905,18 +1280,39 @@ export const Board: React.FC = () => {
   const renderPublicSlot = (slot: PublicSlot) => {
     // Public slots now only contain snacks (文档规定：公共区5个槽位只有点心)
     if (slot.snack) {
+      const isSelectedForGifting = giftingSnack?.snackId === slot.snack.id;
       return (
         <div
           key={slot.id}
-          className="relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border border-gray-700"
+          className={`relative w-28 h-40 flex items-center justify-center bg-gray-800/50 rounded border transition-all ${
+            isSelectedForGifting 
+              ? "border-purple-400 bg-purple-900/30 ring-2 ring-purple-400" 
+              : "border-gray-700"
+          }`}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            {isMyTurn && myAP > 0 ? (
+            {isMyTurn && myAP > 0 && !adjustModeActive ? (
               <DraggableCard card={slot.snack} />
             ) : (
               <CardView card={slot.snack} />
             )}
           </div>
+          {/* 赠尝按钮 */}
+          {isMyTurn && myAP > 0 && !adjustModeActive && !giftingSnack && slot.snack && (
+            <button
+              onClick={() => handleSelectGiftSnack(slot.snack!.id, slot.snack!)}
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[10px] bg-purple-600 hover:bg-purple-500 text-white rounded shadow-lg z-10 transition-all hover:scale-105"
+              title="选择此点心赠送给对手"
+            >
+              赠尝
+            </button>
+          )}
+          {/* 选中状态指示 */}
+          {isSelectedForGifting && (
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[10px] bg-purple-500 text-white rounded shadow-lg z-10 animate-pulse">
+              已选中
+            </div>
+          )}
         </div>
       );
     } else {
@@ -943,6 +1339,14 @@ export const Board: React.FC = () => {
         {/* Overlays */}
         <GameNotification notification={G.notification} />
         <GameOverScreen gameover={ctx.gameover} players={G.players} />
+        <GiftResponseModal 
+          pendingGift={G.pendingGift} 
+          myPlayerId={myPlayerId}
+          myTeaTokens={myTeaTokens}
+          hasJadeChalice={G.players[myPlayerId]?.hasJadeChalice || false}
+          onAccept={handleAcceptGift}
+          onReject={handleRejectGift}
+        />
 
         {/* Header Info */}
         <div className="bg-gray-800 p-2 flex justify-between items-center shadow-md z-30 relative shrink-0">
@@ -952,8 +1356,19 @@ export const Board: React.FC = () => {
             <span>Player ID: {myPlayerId}</span>
           </div>
           <div className="font-bold text-emerald-400">玉盏春夜宴</div>
-          <div className="text-xs text-gray-400">Turn: Player {ctx.currentPlayer}</div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowRules(!showRules)}
+              className="px-3 py-1 text-xs bg-amber-700 hover:bg-amber-600 text-white rounded transition-all"
+            >
+              📜 游戏规则
+            </button>
+            <span className="text-xs text-gray-400">Turn: Player {ctx.currentPlayer}</span>
+          </div>
         </div>
+        
+        {/* 游戏规则弹窗 */}
+        <GameRulesModal show={showRules} onClose={() => setShowRules(false)} />
 
         {/* Content Wrapper */}
         <div className="flex-grow flex overflow-hidden">
@@ -961,13 +1376,8 @@ export const Board: React.FC = () => {
           {isGameStarted && (
             <GrandmotherStatus
               players={G.players}
-              rewardDeck={G.rewardDeck}
+              l2Deck={G.l2Deck}
               jadeGiven={G.jadeGiven}
-              myOfferingCount={myOfferingCount}
-              myTeaTokens={myTeaTokens}
-              isMyTurn={isMyTurn}
-              myAP={myAP}
-              onServeTea={handleServeTea}
             />
           )}
 
@@ -983,6 +1393,8 @@ export const Board: React.FC = () => {
                       playerId={pid}
                       playerState={G.players[pid]}
                       isCurrentPlayer={false}
+                      giftingSnack={giftingSnack}
+                      onGiftTarget={handleConfirmGift}
                     />
                   </div>
                 );
@@ -1059,6 +1471,26 @@ export const Board: React.FC = () => {
                   <div className="text-center text-gray-400 text-sm mb-2">
                     公共区 (5个点心槽位 + 盘子抽取)
                   </div>
+                  
+                  {/* 赠尝模式提示栏 */}
+                  {giftingSnack && (
+                    <div className="flex items-center justify-center gap-4 mb-4 p-3 bg-purple-900/40 border border-purple-500 rounded-lg">
+                      <span className="text-purple-300 text-sm animate-pulse">🎁</span>
+                      <span className="text-purple-200">
+                        赠尝模式：已选择「{giftingSnack.snack.name}」，请点击对手的空盘子
+                      </span>
+                      <button
+                        onClick={handleCancelGifting}
+                        className="px-3 py-1 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-all"
+                      >
+                        取消
+                      </button>
+                      <span className="text-xs text-purple-400">
+                        消耗 1 AP 赠送点心给对手
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col items-center gap-4">
                     {/* 5个点心槽位 */}
                     <div className="flex gap-2 justify-center flex-wrap">
@@ -1070,7 +1502,7 @@ export const Board: React.FC = () => {
                         <div className="font-bold mb-1">盘子抽取区</div>
                         <div className="text-xs">
                           L1剩余: {G.tablewareDeck?.length || 0} | L2剩余:{" "}
-                          {G.rewardDeck?.filter((c: any) => c.level === 2).length || 0}
+                          {G.l2Deck?.length || 0} | L3剩余: {G.l3Deck?.length || 0}
                         </div>
                       </div>
                       <button
@@ -1098,10 +1530,55 @@ export const Board: React.FC = () => {
                 !isMyTurn ? "opacity-60 grayscale-[0.3] pointer-events-none" : ""
               }`}
             >
+              {/* 调整模式按钮栏 - 放在底部固定位置 */}
+              {isMyTurn && (
+                <div className="mb-2 flex items-center gap-2 bg-gray-900/80 px-3 py-2 rounded-lg backdrop-blur-sm">
+                  {adjustModeActive ? (
+                    <>
+                      <button
+                        onClick={handleDeactivateAdjustMode}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-all hover:scale-105 shadow-lg"
+                      >
+                        ✓ 完成调整
+                      </button>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-600/30 border border-amber-500 rounded-lg text-amber-300 text-sm">
+                        <span className="animate-pulse">●</span>
+                        <span>调整模式进行中</span>
+                      </div>
+                      <span className="text-xs text-amber-400 ml-auto">
+                        ⚠️ 完成调整后才能进行其他操作
+                      </span>
+                    </>
+                  ) : adjustModeUsedThisTurn ? (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 text-sm">
+                      <span>✓</span>
+                      <span>本回合已使用过调整模式</span>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleActivateAdjustMode}
+                        disabled={myAP <= 0}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          myAP > 0
+                            ? "bg-amber-600 hover:bg-amber-500 text-white hover:scale-105"
+                            : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                        }`}
+                      >
+                        启用调整模式 (1 AP)
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        激活后可移动等待区点心位置，每回合限一次
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
               <PlayerArea
                 playerId={myPlayerId}
                 playerState={G.players[myPlayerId]}
                 isCurrentPlayer={true}
+                adjustModeActive={adjustModeActive}
               />
             </div>
           </div>

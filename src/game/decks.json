@@ -1,652 +1,976 @@
 {
   "snackDeck": [
     {
-      "id": "snack-basic-0",
+      "id": "snack-0",
       "type": "Snack",
       "name": "玫瑰赤豆糕",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-1",
+      "id": "snack-1",
       "type": "Snack",
-      "name": "冰镇樱桃冻",
+      "name": "桃红圆满冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-2",
+      "id": "snack-2",
       "type": "Snack",
-      "name": "红枣方糕",
+      "name": "桃红方正暖酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-3",
+      "id": "snack-3",
       "type": "Snack",
-      "name": "杨梅冰糕",
+      "name": "桃红方正冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-4",
+      "id": "snack-4",
       "type": "Snack",
-      "name": "桃花酥",
+      "name": "桃红花韵暖酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-5",
+      "id": "snack-5",
       "type": "Snack",
-      "name": "玫瑰花冻",
+      "name": "桃红花韵冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-6",
+      "id": "snack-6",
       "type": "Snack",
-      "name": "抹茶汤圆",
+      "name": "柳绿圆满暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-7",
+      "id": "snack-7",
       "type": "Snack",
-      "name": "薄荷糯米团",
+      "name": "柳绿圆满冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-8",
+      "id": "snack-8",
       "type": "Snack",
-      "name": "艾草青团",
+      "name": "柳绿方正暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-9",
+      "id": "snack-9",
       "type": "Snack",
       "name": "翡翠薄荷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-10",
+      "id": "snack-10",
       "type": "Snack",
-      "name": "茉莉花糕",
+      "name": "柳绿花韵暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-11",
+      "id": "snack-11",
       "type": "Snack",
-      "name": "绿豆冰糕",
+      "name": "柳绿花韵冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-12",
+      "id": "snack-12",
       "type": "Snack",
-      "name": "南瓜圆子",
+      "name": "鹅黄圆满暖酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-13",
+      "id": "snack-13",
       "type": "Snack",
-      "name": "柠檬冻",
+      "name": "鹅黄圆满冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-14",
+      "id": "snack-14",
       "type": "Snack",
-      "name": "桂花糕",
+      "name": "鹅黄方正暖酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-15",
+      "id": "snack-15",
       "type": "Snack",
-      "name": "芒果冰糕",
+      "name": "鹅黄方正冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-16",
+      "id": "snack-16",
       "type": "Snack",
       "name": "金桂海棠酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-17",
+      "id": "snack-17",
       "type": "Snack",
-      "name": "菊花冻",
+      "name": "鹅黄花韵冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-18",
+      "id": "snack-18",
       "type": "Snack",
       "name": "玫瑰赤豆糕",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-19",
+      "id": "snack-19",
       "type": "Snack",
-      "name": "冰镇樱桃冻",
+      "name": "桃红圆满冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-20",
+      "id": "snack-20",
       "type": "Snack",
-      "name": "红枣方糕",
+      "name": "桃红方正暖酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-21",
+      "id": "snack-21",
       "type": "Snack",
-      "name": "杨梅冰糕",
+      "name": "桃红方正冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-22",
+      "id": "snack-22",
       "type": "Snack",
-      "name": "桃花酥",
+      "name": "桃红花韵暖酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-23",
+      "id": "snack-23",
       "type": "Snack",
-      "name": "玫瑰花冻",
+      "name": "桃红花韵冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-24",
+      "id": "snack-24",
       "type": "Snack",
-      "name": "抹茶汤圆",
+      "name": "柳绿圆满暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-25",
+      "id": "snack-25",
       "type": "Snack",
-      "name": "薄荷糯米团",
+      "name": "柳绿圆满冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-26",
+      "id": "snack-26",
       "type": "Snack",
-      "name": "艾草青团",
+      "name": "柳绿方正暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-27",
+      "id": "snack-27",
       "type": "Snack",
       "name": "翡翠薄荷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-28",
+      "id": "snack-28",
       "type": "Snack",
-      "name": "茉莉花糕",
+      "name": "柳绿花韵暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-29",
+      "id": "snack-29",
       "type": "Snack",
-      "name": "绿豆冰糕",
+      "name": "柳绿花韵冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-30",
+      "id": "snack-30",
       "type": "Snack",
-      "name": "南瓜圆子",
+      "name": "鹅黄圆满暖酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-31",
+      "id": "snack-31",
       "type": "Snack",
-      "name": "柠檬冻",
+      "name": "鹅黄圆满冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-32",
+      "id": "snack-32",
       "type": "Snack",
-      "name": "桂花糕",
+      "name": "鹅黄方正暖酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-33",
+      "id": "snack-33",
       "type": "Snack",
-      "name": "芒果冰糕",
+      "name": "鹅黄方正冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-34",
+      "id": "snack-34",
       "type": "Snack",
       "name": "金桂海棠酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-basic-35",
+      "id": "snack-35",
       "type": "Snack",
-      "name": "菊花冻",
+      "name": "鹅黄花韵冷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-36",
+      "id": "snack-36",
       "type": "Snack",
-      "name": "鸳鸯双色卷",
+      "name": "玫瑰赤豆糕",
       "attributes": {
-        "colors": ["red", "green"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-37",
+      "id": "snack-37",
       "type": "Snack",
-      "name": "鸳鸯双色卷",
+      "name": "桃红圆满冷冻",
       "attributes": {
-        "colors": ["red", "green"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-38",
+      "id": "snack-38",
       "type": "Snack",
-      "name": "金玉满堂糕",
+      "name": "桃红方正暖酥",
       "attributes": {
-        "colors": ["red", "yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-39",
+      "id": "snack-39",
       "type": "Snack",
-      "name": "金玉满堂糕",
+      "name": "桃红方正冷冻",
       "attributes": {
-        "colors": ["red", "yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-40",
+      "id": "snack-40",
       "type": "Snack",
-      "name": "翡翠金丝饼",
+      "name": "桃红花韵暖酥",
       "attributes": {
-        "colors": ["green", "yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-color-41",
+      "id": "snack-41",
       "type": "Snack",
-      "name": "翡翠金丝饼",
+      "name": "桃红花韵冷冻",
       "attributes": {
-        "colors": ["green", "yellow"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双色风味，一口尽享两种色彩"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-42",
+      "id": "snack-42",
       "type": "Snack",
-      "name": "乾坤方圆盒",
+      "name": "柳绿圆满暖酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle", "square"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-43",
+      "id": "snack-43",
       "type": "Snack",
-      "name": "乾坤方圆盒",
+      "name": "柳绿圆满冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle", "square"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-44",
+      "id": "snack-44",
       "type": "Snack",
-      "name": "花好月圆饼",
+      "name": "柳绿方正暖酥",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle", "flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-45",
+      "id": "snack-45",
       "type": "Snack",
-      "name": "花好月圆饼",
+      "name": "翡翠薄荷冻",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-46",
+      "id": "snack-46",
       "type": "Snack",
-      "name": "锦绣攒盒",
+      "name": "柳绿花韵暖酥",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-twin-shape-47",
+      "id": "snack-47",
       "type": "Snack",
-      "name": "锦绣攒盒",
+      "name": "柳绿花韵冷冻",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square", "flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 2,
-      "description": "双形造型，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-twin-twin-48",
+      "id": "snack-48",
       "type": "Snack",
-      "name": "锦绣鸳鸯盒",
+      "name": "鹅黄圆满暖酥",
       "attributes": {
-        "colors": ["red", "green"],
-        "shapes": ["circle", "square"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 3,
-      "description": "双色双形，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-twin-twin-49",
+      "id": "snack-49",
       "type": "Snack",
-      "name": "锦绣鸳鸯盒",
+      "name": "鹅黄圆满冷冻",
       "attributes": {
-        "colors": ["green", "yellow"],
-        "shapes": ["square", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 3,
-      "description": "双色双形，精美绝伦"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-triple-color-50",
+      "id": "snack-50",
       "type": "Snack",
-      "name": "三彩琉璃糕",
+      "name": "鹅黄方正暖酥",
       "attributes": {
-        "colors": ["red", "green", "yellow"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 3,
-      "description": "三色绚烂，极致华美"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-triple-color-51",
+      "id": "snack-51",
       "type": "Snack",
-      "name": "三彩琉璃糕",
+      "name": "鹅黄方正冷冻",
       "attributes": {
-        "colors": ["red", "green", "yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 3,
-      "description": "三色绚烂，极致华美"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-triple-shape-52",
+      "id": "snack-52",
       "type": "Snack",
-      "name": "百花攒盒",
+      "name": "金桂海棠酥",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle", "square", "flower"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
-      "level": 3,
-      "description": "三形荟萃，工艺精湛"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     },
     {
-      "id": "snack-epic-triple-shape-53",
+      "id": "snack-53",
       "type": "Snack",
-      "name": "百花攒盒",
+      "name": "鹅黄花韵冷冻",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle", "square", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
-      "level": 3,
-      "description": "三形荟萃，工艺精湛"
+      "level": 1,
+      "description": "美味的点心，需放置在食器上。"
     }
   ],
   "tablewareDeck": [
@@ -655,9 +979,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -667,9 +997,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -679,9 +1015,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -691,9 +1033,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -703,9 +1051,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -715,9 +1069,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -727,9 +1087,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -739,9 +1105,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -751,9 +1123,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -763,9 +1141,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -775,9 +1159,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -787,9 +1177,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -799,9 +1195,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -811,9 +1213,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -823,9 +1231,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -835,9 +1249,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -847,9 +1267,15 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
@@ -859,297 +1285,363 @@
       "type": "Tableware",
       "name": "粗瓷盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 1,
       "description": "粗糙的器皿。属性严格限制，难以匹配。"
     },
     {
-      "id": "plate-L1-extra-72",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L1-extra-73",
-      "type": "Tableware",
-      "name": "粗瓷盘",
-      "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["cold"]
-      },
-      "level": 1,
-      "description": "基础食器"
-    },
-    {
-      "id": "plate-L2-C-74",
-      "type": "Tableware",
-      "name": "细釉盘",
-      "attributes": {
-        "colors": ["red", "green"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
-      },
-      "level": 2,
-      "description": "做工精良。兼容两种颜色。"
-    },
-    {
-      "id": "plate-L2-C-75",
+      "id": "plate-L2-DualColor-72",
       "type": "Tableware",
       "name": "细釉盘·双色",
       "attributes": {
-        "colors": ["green", "yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red",
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种颜色。"
     },
     {
-      "id": "plate-L2-C-76",
+      "id": "plate-L2-DualColor-73",
       "type": "Tableware",
       "name": "细釉盘·双色",
       "attributes": {
-        "colors": ["yellow", "red"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "green",
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种颜色。"
     },
     {
-      "id": "plate-L2-C-77",
+      "id": "plate-L2-DualColor-74",
       "type": "Tableware",
       "name": "细釉盘·双色",
       "attributes": {
-        "colors": ["red", "green"],
-        "shapes": ["circle"],
-        "temps": ["cold"]
+        "colors": [
+          "yellow",
+          "red"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种颜色。"
     },
     {
-      "id": "plate-L2-C-78",
+      "id": "plate-L2-DualColor-75",
       "type": "Tableware",
-      "name": "细釉盘",
+      "name": "细釉盘·双色",
       "attributes": {
-        "colors": ["green", "yellow"],
-        "shapes": ["square"],
-        "temps": ["warm"]
+        "colors": [
+          "red",
+          "green"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 2,
-      "description": "双色兼容"
+      "description": "做工精良。兼容两种颜色。"
     },
     {
-      "id": "plate-L2-C-79",
-      "type": "Tableware",
-      "name": "细釉盘",
-      "attributes": {
-        "colors": ["yellow", "red"],
-        "shapes": ["flower"],
-        "temps": ["cold"]
-      },
-      "level": 2,
-      "description": "双色兼容"
-    },
-    {
-      "id": "plate-L2-S-80",
+      "id": "plate-L2-DualShape-76",
       "type": "Tableware",
       "name": "细釉盘·双形",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle", "square"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle",
+          "square"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种形状。"
     },
     {
-      "id": "plate-L2-S-81",
+      "id": "plate-L2-DualShape-77",
       "type": "Tableware",
       "name": "细釉盘·双形",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square",
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种形状。"
     },
     {
-      "id": "plate-L2-S-82",
+      "id": "plate-L2-DualShape-78",
       "type": "Tableware",
       "name": "细釉盘·双形",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower", "circle"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower",
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种形状。"
     },
     {
-      "id": "plate-L2-S-83",
+      "id": "plate-L2-DualShape-79",
       "type": "Tableware",
       "name": "细釉盘·双形",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle", "square"],
-        "temps": ["cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle",
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。兼容两种形状。"
     },
     {
-      "id": "plate-L2-S-84",
-      "type": "Tableware",
-      "name": "细釉盘",
-      "attributes": {
-        "colors": ["green"],
-        "shapes": ["square", "flower"],
-        "temps": ["warm"]
-      },
-      "level": 2,
-      "description": "双形兼容"
-    },
-    {
-      "id": "plate-L2-S-85",
-      "type": "Tableware",
-      "name": "细釉盘",
-      "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower", "circle"],
-        "temps": ["cold"]
-      },
-      "level": 2,
-      "description": "双形兼容"
-    },
-    {
-      "id": "plate-L2-T-86",
+      "id": "plate-L2-OmniTemp-80",
       "type": "Tableware",
       "name": "细釉盘·温润",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm", "cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm",
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。冷热皆宜，材质分必得。"
     },
     {
-      "id": "plate-L2-T-87",
+      "id": "plate-L2-OmniTemp-81",
       "type": "Tableware",
       "name": "细釉盘·温润",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["square"],
-        "temps": ["warm", "cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "warm",
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。冷热皆宜，材质分必得。"
     },
     {
-      "id": "plate-L2-T-88",
+      "id": "plate-L2-OmniTemp-82",
       "type": "Tableware",
       "name": "细釉盘·温润",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm", "cold"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm",
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。冷热皆宜，材质分必得。"
     },
     {
-      "id": "plate-L2-T-89",
+      "id": "plate-L2-OmniTemp-83",
       "type": "Tableware",
       "name": "细釉盘·温润",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle"],
-        "temps": ["warm", "cold"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm",
+          "cold"
+        ]
       },
       "level": 2,
       "description": "做工精良。冷热皆宜，材质分必得。"
     },
     {
-      "id": "plate-L3-C-90",
+      "id": "plate-L3-Prismatic-84",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
-        "colors": ["red", "green", "yellow"],
-        "shapes": ["circle"],
-        "temps": ["warm"]
+        "colors": [
+          "red",
+          "green",
+          "yellow"
+        ],
+        "shapes": [
+          "circle"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。流光溢彩，兼容所有颜色。"
     },
     {
-      "id": "plate-L3-C-91",
+      "id": "plate-L3-Prismatic-85",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
-        "colors": ["red", "green", "yellow"],
-        "shapes": ["square"],
-        "temps": ["cold"]
+        "colors": [
+          "red",
+          "green",
+          "yellow"
+        ],
+        "shapes": [
+          "square"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。流光溢彩，兼容所有颜色。"
     },
     {
-      "id": "plate-L3-C-92",
+      "id": "plate-L3-Prismatic-86",
       "type": "Tableware",
       "name": "流光盘",
       "attributes": {
-        "colors": ["red", "green", "yellow"],
-        "shapes": ["flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red",
+          "green",
+          "yellow"
+        ],
+        "shapes": [
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。流光溢彩，兼容所有颜色。"
     },
     {
-      "id": "plate-L3-S-93",
+      "id": "plate-L3-HundredFlowers-87",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
-        "colors": ["red"],
-        "shapes": ["circle", "square", "flower"],
-        "temps": ["warm"]
+        "colors": [
+          "red"
+        ],
+        "shapes": [
+          "circle",
+          "square",
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。千姿百态，兼容所有形状。"
     },
     {
-      "id": "plate-L3-S-94",
+      "id": "plate-L3-HundredFlowers-88",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
-        "colors": ["green"],
-        "shapes": ["circle", "square", "flower"],
-        "temps": ["cold"]
+        "colors": [
+          "green"
+        ],
+        "shapes": [
+          "circle",
+          "square",
+          "flower"
+        ],
+        "temps": [
+          "cold"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。千姿百态，兼容所有形状。"
     },
     {
-      "id": "plate-L3-S-95",
+      "id": "plate-L3-HundredFlowers-89",
       "type": "Tableware",
       "name": "百花盘",
       "attributes": {
-        "colors": ["yellow"],
-        "shapes": ["circle", "square", "flower"],
-        "temps": ["warm"]
+        "colors": [
+          "yellow"
+        ],
+        "shapes": [
+          "circle",
+          "square",
+          "flower"
+        ],
+        "temps": [
+          "warm"
+        ]
       },
       "level": 3,
       "description": "稀世珍宝。千姿百态，兼容所有形状。"

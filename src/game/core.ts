@@ -62,12 +62,15 @@ export interface PlayerState {
   teaTokenUsedThisTurn: boolean;
   tasteDoneThisTurn: boolean;
   hasJadeChalice: boolean;
+  adjustModeActive: boolean; // 调整模式是否激活
+  adjustModeUsedThisTurn: boolean; // 本回合是否已使用过调整模式
 }
 
 export interface GameState {
   snackDeck: Card[];
   tablewareDeck: Card[];
-  rewardDeck: Card[];
+  l2Deck: Card[]; // L2 盘子牌堆（奉献L1的奖励，L1用完后玩家也可抽取）
+  l3Deck: Card[]; // L3 盘子牌堆（奉献L2的奖励）
   publicArea: PublicSlot[];
   players: { [key: string]: PlayerState };
   jadeGiven: boolean;
@@ -146,7 +149,8 @@ export const calculateFinalScore = (player: PlayerState) => {
 export function createInitialState(numPlayers: number): GameState {
   const { snackDeck, tablewareDeck } = getDecks();
   const l1Plates = tablewareDeck.filter((c) => c.level === 1);
-  const rewardPlates = tablewareDeck.filter((c) => c.level > 1);
+  const l2Plates = tablewareDeck.filter((c) => c.level === 2);
+  const l3Plates = tablewareDeck.filter((c) => c.level === 3);
 
   const players: { [key: string]: PlayerState } = {};
   for (let i = 0; i < numPlayers; i++) {
@@ -159,6 +163,8 @@ export function createInitialState(numPlayers: number): GameState {
       teaTokenUsedThisTurn: false,
       tasteDoneThisTurn: false,
       hasJadeChalice: false,
+      adjustModeActive: false,
+      adjustModeUsedThisTurn: false,
     };
   }
 
@@ -171,7 +177,8 @@ export function createInitialState(numPlayers: number): GameState {
   const state: GameState = {
     snackDeck: shuffle(snackDeck),
     tablewareDeck: shuffle(l1Plates),
-    rewardDeck: shuffle(rewardPlates),
+    l2Deck: shuffle(l2Plates),
+    l3Deck: shuffle(l3Plates),
     publicArea,
     players,
     jadeGiven: false,
@@ -209,9 +216,8 @@ export function drawTableware(state: GameState): Card | undefined {
     return state.tablewareDeck.shift();
   }
   // L1用完，抽取L2
-  const l2Index = state.rewardDeck.findIndex((c) => c.level === 2);
-  if (l2Index !== -1) {
-    return state.rewardDeck.splice(l2Index, 1)[0];
+  if (state.l2Deck.length > 0) {
+    return state.l2Deck.shift();
   }
   return undefined;
 }
@@ -237,13 +243,14 @@ export function nextPlayer(state: GameState): void {
   player.actionPoints = 3;
   player.tasteDoneThisTurn = false;
   player.teaTokenUsedThisTurn = false;
+  player.adjustModeActive = false; // 重置调整模式
+  player.adjustModeUsedThisTurn = false; // 重置调整模式使用记录
 
   if (nextIdx === 0) state.turn++;
 
   // 检查结束条件
   if (state.endConditionTriggeredAtRound === null) {
-    const l2PlatesRemaining = state.rewardDeck.filter((c) => c.level === 2).length;
-    const allL2Distributed = l2PlatesRemaining === 0;
+    const allL2Distributed = state.l2Deck.length === 0;
 
     if (allL2Distributed) {
       state.endConditionTriggeredAtRound = state.turn;

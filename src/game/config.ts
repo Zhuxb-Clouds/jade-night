@@ -1,5 +1,5 @@
 import { Game } from "boardgame.io";
-import { INVALID_MOVE } from "boardgame.io/core";
+import { INVALID_MOVE, Stage } from "boardgame.io/core";
 import decksData from "./decks.json";
 
 // --- Card Attributes ---
@@ -57,6 +57,8 @@ export interface PlayerState {
   teaTokenUsedThisTurn: boolean; // Whether tea token has been used this turn
   tasteDoneThisTurn: boolean; // 每回合只能品鉴一次
   hasJadeChalice: boolean; // 是否持有玉盏
+  adjustModeActive: boolean; // 调整模式是否激活（花费1AP激活，回合结束重置）
+  adjustModeUsedThisTurn: boolean; // 本回合是否已使用过调整模式
 }
 
 export interface NotificationState {
@@ -66,22 +68,27 @@ export interface NotificationState {
   timestamp: number;
 }
 
-// L3奉献时的选择状态 - 不再需要，改为敬茶机制
-// export interface L3ChoicePending {
-//   playerId: string;
-//   slotId: string;
-// }
+// 待处理的赠尝请求
+export interface PendingGift {
+  fromPlayerId: string;    // 发起者
+  toPlayerId: string;      // 接收者
+  snack: Card;             // 赠送的点心
+  targetSlotId: string;    // 目标槽位
+  pairingScore: number;    // 预计配对分
+}
 
 export interface JadeNightState {
   snackDeck: Card[];
   tablewareDeck: Card[]; // Public draw pile (L1 only)
-  rewardDeck: Card[]; // Rewards for offering (L2, L3)
+  l2Deck: Card[]; // L2 盘子牌堆（奉献L1的奖励，L1用完后玩家也可抽取）
+  l3Deck: Card[]; // L3 盘子牌堆（奉献L2的奖励）
   publicArea: PublicSlot[];
   players: { [key: string]: PlayerState };
   isGameStarted: boolean;
   notification: NotificationState | null;
   jadeGiven: boolean; // 玉盏是否已被发放
   endConditionTriggeredAtRound: number | null; // 结束条件触发时的回合数，用于公平轮判定
+  pendingGift: PendingGift | null; // 待处理的赠尝请求
 }
 
 // --- Helpers ---
@@ -175,9 +182,10 @@ export const JadeNightGame: Game<JadeNightState> = {
   setup: ({ ctx }) => {
     const { snackDeck, tablewareDeck } = getDecks();
 
-    // Split tablewareDeck into Public (L1) and Reward (L2+)
+    // Split tablewareDeck into 3 separate decks by level
     const l1Plates = tablewareDeck.filter((c) => c.level === 1);
-    const rewardPlates = tablewareDeck.filter((c) => c.level > 1);
+    const l2Plates = tablewareDeck.filter((c) => c.level === 2);
+    const l3Plates = tablewareDeck.filter((c) => c.level === 3);
 
     const players: { [key: string]: PlayerState } = {};
     const numPlayers = ctx.numPlayers || 5;
@@ -191,6 +199,8 @@ export const JadeNightGame: Game<JadeNightState> = {
         teaTokenUsedThisTurn: false,
         tasteDoneThisTurn: false,
         hasJadeChalice: false,
+        adjustModeActive: false,
+        adjustModeUsedThisTurn: false,
       };
     }
 
@@ -203,13 +213,15 @@ export const JadeNightGame: Game<JadeNightState> = {
     return {
       snackDeck,
       tablewareDeck: l1Plates,
-      rewardDeck: rewardPlates,
+      l2Deck: l2Plates,
+      l3Deck: l3Plates,
       publicArea,
       players,
       isGameStarted: false,
       notification: null,
       jadeGiven: false,
       endConditionTriggeredAtRound: null,
+      pendingGift: null,
     };
   },
 
@@ -233,12 +245,23 @@ export const JadeNightGame: Game<JadeNightState> = {
         player.actionPoints = 3;
         player.teaTokenUsedThisTurn = false; // Reset tea token usage for new turn
         player.tasteDoneThisTurn = false; // 重置每回合品鉴限制
+        player.adjustModeActive = false; // 重置调整模式
+        player.adjustModeUsedThisTurn = false; // 重置调整模式使用记录
+
+        // 玉盏持有者回合开始时免费获得 1 茶券
+        if (player.hasJadeChalice) {
+          player.teaTokens += 1;
+          G.notification = {
+            type: "info",
+            message: "玉盏特权：回合开始，免费获得 1 枚茶券！",
+            timestamp: Date.now(),
+          };
+        }
       }
 
       // 检查结束条件是否触发，如果是则记录当前回合数
       if (G.endConditionTriggeredAtRound === null) {
-        const l2PlatesRemaining = G.rewardDeck.filter((c) => c.level === 2).length;
-        const allL2Distributed = l2PlatesRemaining === 0;
+        const allL2Distributed = G.l2Deck.length === 0;
         const endConditionMet = allL2Distributed;
 
         if (endConditionMet) {
@@ -247,6 +270,10 @@ export const JadeNightGame: Game<JadeNightState> = {
         }
       }
     },
+    // 关键配置：允许所有玩家在任何时候执行 moves
+    // 这对于赠尝响应机制至关重要：被赠尝的玩家需要在不是自己回合时响应
+    // Stage.NULL 表示不限制在特定 stage，玩家可以执行顶层 moves
+    activePlayers: { all: Stage.NULL },
   },
 
   endIf: ({ G, ctx }) => {
@@ -307,13 +334,17 @@ export const JadeNightGame: Game<JadeNightState> = {
   },
 
   moves: {
-    // Manual end turn
-    endTurn: ({ events }) => {
+    // Manual end turn - 只有当前回合玩家可以结束回合
+    endTurn: ({ ctx, playerID, events }) => {
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
       events.endTurn();
     },
 
     // Use a tea token to gain +1 AP (max 1 per turn)
-    useTeaToken: ({ G, playerID }) => {
+    // 只有当前回合玩家可以使用茶券
+    useTeaToken: ({ G, ctx, playerID }) => {
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const player = G.players[playerID];
       if (!player) return INVALID_MOVE;
 
@@ -344,8 +375,9 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       // Shuffle all decks
       G.snackDeck = random.Shuffle(G.snackDeck);
-      G.tablewareDeck = random.Shuffle(G.tablewareDeck); // Only L1
-      G.rewardDeck = random.Shuffle(G.rewardDeck); // L2 + L3
+      G.tablewareDeck = random.Shuffle(G.tablewareDeck); // L1
+      G.l2Deck = random.Shuffle(G.l2Deck); // L2
+      G.l3Deck = random.Shuffle(G.l3Deck); // L3
 
       // Distribute 1 L1 plate to each player
       Object.keys(G.players).forEach((pid) => {
@@ -376,13 +408,17 @@ export const JadeNightGame: Game<JadeNightState> = {
     // 从公共区拿取点心 (1 AP)
     // 文档规定：从公共区拿取一张点心，放置在等待区中有空位的食器上
     takeSnack: (
-      { G, playerID, events },
+      { G, ctx, playerID, events },
       { snackId, targetSlotId }: { snackId: string; targetSlotId: string },
     ) => {
+      // 只有当前回合玩家可以拿取点心
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const pid = playerID || "0";
       const player = G.players[pid];
 
       if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 调整模式中不能进行其他行动
 
       // 等待区上限为5
       if (player.waitingArea.length >= 5) return INVALID_MOVE;
@@ -423,25 +459,26 @@ export const JadeNightGame: Game<JadeNightState> = {
 
     // 从公共区抽取食器 (1 AP)
     // 文档规定：公共区域还有一个抽取盘子的槽位，先抽取L1,L1消耗完后抽取L2
-    takeTableware: ({ G, playerID, events }) => {
+    takeTableware: ({ G, ctx, playerID, events }) => {
+      // 只有当前回合玩家可以抽取食器
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const pid = playerID || "0";
       const player = G.players[pid];
 
       if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 调整模式中不能进行其他行动
 
       // 等待区上限为5
       if (player.waitingArea.length >= 5) return INVALID_MOVE;
 
-      // 先从L1牌堆抽取，L1消耗完后从奖励牌堆抽取L2
+      // 先从L1牌堆抽取，L1消耗完后从L2牌堆抽取
       let tableware: Card | undefined;
       if (G.tablewareDeck.length > 0) {
         tableware = G.tablewareDeck.shift();
-      } else {
+      } else if (G.l2Deck.length > 0) {
         // L1用完，抽取L2
-        const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
-        if (l2Index !== -1) {
-          tableware = G.rewardDeck.splice(l2Index, 1)[0];
-        }
+        tableware = G.l2Deck.shift();
       }
 
       if (!tableware) return INVALID_MOVE; // 没有可用的盘子
@@ -462,14 +499,60 @@ export const JadeNightGame: Game<JadeNightState> = {
       }
     },
 
-    // 调整等待区点心位置 (0 AP)
-    // 文档规定：在你的回合，你可以任意调整等待区点心的位置，不消耗AP
-    adjustSnack: (
-      { G, playerID },
-      { fromSlotId, toSlotId }: { fromSlotId: string; toSlotId: string },
-    ) => {
+    // 激活调整模式 (1 AP)
+    // 花费1AP激活调整模式，在本回合内可以任意调整等待区点心位置
+    // 每回合只能使用一次，必须关闭后才能进行其他行动
+    activateAdjustMode: ({ G, ctx, playerID }) => {
+      // 只有当前回合玩家可以激活调整模式
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const pid = playerID || "0";
       const player = G.players[pid];
+
+      if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 已经激活
+      if (player.adjustModeUsedThisTurn) return INVALID_MOVE; // 本回合已使用过
+
+      player.adjustModeActive = true;
+      player.adjustModeUsedThisTurn = true; // 标记本回合已使用
+      player.actionPoints -= 1;
+
+      // 调整模式不自动结束回合，必须手动关闭
+    },
+
+    // 关闭调整模式 (0 AP)
+    // 关闭调整模式后才能继续其他行动
+    deactivateAdjustMode: ({ G, ctx, playerID, events }) => {
+      // 只有当前回合玩家可以关闭调整模式
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      const player = G.players[pid];
+
+      if (!player.adjustModeActive) return INVALID_MOVE; // 未激活
+
+      player.adjustModeActive = false;
+
+      // 关闭后检查是否还有AP
+      if (player.actionPoints <= 0) {
+        events.endTurn();
+      }
+    },
+
+    // 调整等待区点心位置 (0 AP，需要先激活调整模式)
+    // 在调整模式下，可以任意移动等待区点心的位置，不消耗AP
+    adjustSnack: (
+      { G, ctx, playerID },
+      { fromSlotId, toSlotId }: { fromSlotId: string; toSlotId: string },
+    ) => {
+      // 只有当前回合玩家可以调整点心
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      const player = G.players[pid];
+
+      // 必须先激活调整模式
+      if (!player.adjustModeActive) return INVALID_MOVE;
 
       if (fromSlotId === toSlotId) return INVALID_MOVE;
 
@@ -488,9 +571,53 @@ export const JadeNightGame: Game<JadeNightState> = {
       // 不消耗AP
     },
 
-    taste: ({ G, playerID, events }, { slotId }: { slotId: string }) => {
+    // 重新整理等待区 (1 AP)
+    // 花费1AP，可以任意交换等待区中两个槽位的全部内容（包括盘子和点心）
+    rearrangeWaitingArea: (
+      { G, ctx, playerID, events },
+      { slotId1, slotId2 }: { slotId1: string; slotId2: string },
+    ) => {
+      // 只有当前回合玩家可以重新整理
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      const player = G.players[pid];
+
+      if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (slotId1 === slotId2) return INVALID_MOVE;
+
+      const slot1Index = player.waitingArea.findIndex((s) => s.id === slotId1);
+      const slot2Index = player.waitingArea.findIndex((s) => s.id === slotId2);
+
+      if (slot1Index === -1 || slot2Index === -1) return INVALID_MOVE;
+
+      // 交换两个槽位的全部内容（盘子和点心）
+      const temp = { ...player.waitingArea[slot1Index] };
+      player.waitingArea[slot1Index] = {
+        ...player.waitingArea[slot2Index],
+        id: slotId1, // 保持原槽位ID
+      };
+      player.waitingArea[slot2Index] = {
+        ...temp,
+        id: slotId2, // 保持原槽位ID
+      };
+
+      // 消耗1 AP
+      player.actionPoints -= 1;
+
+      // End turn if no AP
+      if (player.actionPoints <= 0) {
+        events.endTurn();
+      }
+    },
+
+    taste: ({ G, ctx, playerID, events }, { slotId }: { slotId: string }) => {
+      // 只有当前回合玩家可以品鉴
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const player = G.players[playerID];
       if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 调整模式中不能进行其他行动
 
       // 每回合只能品鉴一次点心
       if (player.tasteDoneThisTurn) return INVALID_MOVE;
@@ -517,9 +644,13 @@ export const JadeNightGame: Game<JadeNightState> = {
       if (player.actionPoints <= 0) events.endTurn();
     },
 
-    offer: ({ G, ctx, events }, { slotId }: { slotId: string }) => {
+    offer: ({ G, ctx, playerID, events }, { slotId }: { slotId: string }) => {
+      // 只有当前回合玩家可以奉献
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
       const player = G.players[ctx.currentPlayer];
       if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 调整模式中不能进行其他行动
 
       const slotIndex = player.waitingArea.findIndex((s) => s.id === slotId);
       if (slotIndex === -1) return INVALID_MOVE;
@@ -539,12 +670,30 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       player.actionPoints -= 1;
 
-      let rewardMessage = "";
+      // 奉献成功，获得1枚茶券
+      player.teaTokens += 1;
+
+      let rewardMessage = "获得1枚茶券。";
 
       // 文档规定：若奉献的点心配对分>=3点，则额外获得一枚茶券
       if (pairingScore >= 3) {
         player.teaTokens += 1;
         rewardMessage += "配对分≥3，额外获得1枚茶券！";
+
+        // 流动的玉盏：高质量奉献(>=3分)立即夺取玉盏
+        if (!player.hasJadeChalice) {
+          // 从其他玩家手中夺取玉盏
+          for (const pid of Object.keys(G.players)) {
+            if (G.players[pid].hasJadeChalice) {
+              G.players[pid].hasJadeChalice = false;
+              rewardMessage += ` 夺取了玩家 ${pid} 的【玉盏】！`;
+              break;
+            }
+          }
+          player.hasJadeChalice = true;
+          G.jadeGiven = true;
+          rewardMessage += " 获得【玉盏】！";
+        }
       }
 
       // 奖励逻辑：根据食器等级获得升级
@@ -552,9 +701,9 @@ export const JadeNightGame: Game<JadeNightState> = {
       // L2 -> 获得 L3
       // L3 -> 获得两个茶券
       if (currentLevel === 1) {
-        const rewardIndex = G.rewardDeck.findIndex((c) => c.level === 2);
-        if (rewardIndex !== -1) {
-          const rewardPlate = G.rewardDeck.splice(rewardIndex, 1)[0];
+        // 从L2牌堆获取奖励
+        if (G.l2Deck.length > 0) {
+          const rewardPlate = G.l2Deck.shift()!;
           player.waitingArea.push({
             id: `reward-plate-${Date.now()}`,
             tableware: rewardPlate,
@@ -565,9 +714,9 @@ export const JadeNightGame: Game<JadeNightState> = {
           rewardMessage += ` 牌堆无L2食器可领取。`;
         }
       } else if (currentLevel === 2) {
-        const rewardIndex = G.rewardDeck.findIndex((c) => c.level === 3);
-        if (rewardIndex !== -1) {
-          const rewardPlate = G.rewardDeck.splice(rewardIndex, 1)[0];
+        // 从L3牌堆获取奖励
+        if (G.l3Deck.length > 0) {
+          const rewardPlate = G.l3Deck.shift()!;
           player.waitingArea.push({
             id: `reward-plate-${Date.now()}`,
             tableware: rewardPlate,
@@ -581,17 +730,14 @@ export const JadeNightGame: Game<JadeNightState> = {
           if (waitingAreaSpace >= 2) {
             // 有两个以上空位，返回两个L2盘子
             let l2Count = 0;
-            for (let i = 0; i < 2; i++) {
-              const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
-              if (l2Index !== -1) {
-                const l2Plate = G.rewardDeck.splice(l2Index, 1)[0];
-                player.waitingArea.push({
-                  id: `reward-plate-${Date.now()}-${i}`,
-                  tableware: l2Plate,
-                  snack: undefined,
-                });
-                l2Count++;
-              }
+            for (let i = 0; i < 2 && G.l2Deck.length > 0; i++) {
+              const l2Plate = G.l2Deck.shift()!;
+              player.waitingArea.push({
+                id: `reward-plate-${Date.now()}-${i}`,
+                tableware: l2Plate,
+                snack: undefined,
+              });
+              l2Count++;
             }
             if (l2Count > 0) {
               rewardMessage += ` L3已空，获得${l2Count}个L2食器。`;
@@ -600,9 +746,8 @@ export const JadeNightGame: Game<JadeNightState> = {
             }
           } else if (waitingAreaSpace === 1) {
             // 只有一个空位，返回一个L2盘子加1茶券
-            const l2Index = G.rewardDeck.findIndex((c) => c.level === 2);
-            if (l2Index !== -1) {
-              const l2Plate = G.rewardDeck.splice(l2Index, 1)[0];
+            if (G.l2Deck.length > 0) {
+              const l2Plate = G.l2Deck.shift()!;
               player.waitingArea.push({
                 id: `reward-plate-${Date.now()}`,
                 tableware: l2Plate,
@@ -637,41 +782,140 @@ export const JadeNightGame: Game<JadeNightState> = {
       if (player.actionPoints <= 0) events.endTurn();
     },
 
-    // 敬茶：获取玉盏的唯一方式
-    // 条件：消耗9个茶券，奉献区每1盘减少1个茶券，消耗3AP
-    // 玉盏不占用区域，只作为标识物
-    serveTea: ({ G, ctx, events }) => {
-      const player = G.players[ctx.currentPlayer];
-      // 获取玉盏需要消耗3AP
-      if (player.actionPoints < 3) return INVALID_MOVE;
+    // 赠尝：将公共区点心放到对手的空闲食器上
+    // 规则：消耗1 AP，发起赠尝请求
+    // 对手可以选择：接受（点心放上）或拒绝（支付茶券，点心弃置）
+    // 限制：放置的点心必须至少能得1分
+    giftSnack: (
+      { G, ctx, playerID },
+      { snackId, targetPlayerId, targetSlotId }: { snackId: string; targetPlayerId: string; targetSlotId: string },
+    ) => {
+      // 只有当前回合玩家可以发起赠尝
+      if (playerID !== ctx.currentPlayer) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      const player = G.players[pid];
 
-      // 检查玉盏是否已被发放
-      if (G.jadeGiven) return INVALID_MOVE;
+      if (player.actionPoints <= 0) return INVALID_MOVE;
+      if (player.adjustModeActive) return INVALID_MOVE; // 调整模式中不能进行其他行动
+      if (G.pendingGift) return INVALID_MOVE; // 已有待处理的赠尝
 
-      // 计算实际需要的茶券数量：基础9个，每1个奉献减少1个
-      const baseCost = 9;
-      const discount = player.offeringArea.length;
-      const actualCost = Math.max(0, baseCost - discount);
+      // 不能给自己赠送
+      if (targetPlayerId === pid) return INVALID_MOVE;
 
-      // 检查茶券是否足够
-      if (player.teaTokens < actualCost) return INVALID_MOVE;
+      // 目标玩家必须存在
+      const targetPlayer = G.players[targetPlayerId];
+      if (!targetPlayer) return INVALID_MOVE;
 
-      // 消耗茶券和AP
-      player.teaTokens -= actualCost;
-      player.actionPoints -= 3;
+      // 从公共区找到点心
+      const slotIndex = G.publicArea.findIndex((s) => s.snack?.id === snackId);
+      if (slotIndex === -1) return INVALID_MOVE;
+      const slot = G.publicArea[slotIndex];
+      const snack = slot.snack;
+      if (!snack) return INVALID_MOVE;
 
-      // 玉盏只作为标识物，不占用等待区/个人区/奉献区
-      player.hasJadeChalice = true;
-      G.jadeGiven = true;
+      // 目标玩家等待区找到对应槽位
+      const targetSlot = targetPlayer.waitingArea.find((s) => s.id === targetSlotId);
+      if (!targetSlot) return INVALID_MOVE;
+      if (!targetSlot.tableware) return INVALID_MOVE; // 必须有食器
+      if (targetSlot.snack) return INVALID_MOVE; // 食器上不能已有点心
+
+      // 限制：放置的点心必须至少能得1分
+      const tempItem: WaitingItem = {
+        id: "temp",
+        tableware: targetSlot.tableware,
+        snack: snack,
+      };
+      const pairingScore = calculatePairingScore(tempItem);
+      if (pairingScore < 1) return INVALID_MOVE;
+
+      // 从公共区移除点心（暂存到 pendingGift）
+      slot.snack = undefined;
+      if (G.snackDeck.length > 0) {
+        slot.snack = G.snackDeck.shift();
+      }
+
+      // 消耗1 AP
+      player.actionPoints -= 1;
+
+      // 创建待处理的赠尝请求
+      G.pendingGift = {
+        fromPlayerId: pid,
+        toPlayerId: targetPlayerId,
+        snack: snack,
+        targetSlotId: targetSlotId,
+        pairingScore: pairingScore,
+      };
 
       G.notification = {
-        type: "offering",
-        message: "敬茶成功！获得【玉盏】！奉献区分数将翻倍计算。",
-        details: { actualCost },
+        type: "info",
+        message: `赠尝请求：玩家 ${pid} 想将「${snack.name}」(${pairingScore}分) 送给玩家 ${targetPlayerId}`,
+        details: { pairingScore },
         timestamp: Date.now(),
       };
 
-      if (player.actionPoints <= 0) events.endTurn();
+      // 不需要 setActivePlayers，直接等待对方通过 acceptGift/rejectGift 响应
+      // 这些 moves 的权限在 move 内部检查
+    },
+
+    // 接受赠尝：任何玩家都可以调用，但只有被赠尝者可以成功执行
+    // 通过 move 内部检查 pendingGift.toPlayerId 来验证权限
+    acceptGift: ({ G, playerID }) => {
+      if (!G.pendingGift) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      // 只有被赠尝的玩家可以响应
+      if (G.pendingGift.toPlayerId !== pid) return INVALID_MOVE;
+
+      const targetPlayer = G.players[pid];
+      const targetSlot = targetPlayer.waitingArea.find((s) => s.id === G.pendingGift!.targetSlotId);
+      
+      if (!targetSlot || !targetSlot.tableware || targetSlot.snack) {
+        G.notification = {
+          type: "info",
+          message: `赠尝失效：目标槽位状态已改变，「${G.pendingGift.snack.name}」被弃置`,
+          timestamp: Date.now(),
+        };
+        G.pendingGift = null;
+        return;
+      }
+
+      // 放置点心
+      targetSlot.snack = G.pendingGift.snack;
+
+      G.notification = {
+        type: "info",
+        message: `玩家 ${pid} 接受了赠尝：「${G.pendingGift.snack.name}」(+${G.pendingGift.pairingScore}分)`,
+        details: { pairingScore: G.pendingGift.pairingScore },
+        timestamp: Date.now(),
+      };
+
+      G.pendingGift = null;
+    },
+
+    // 拒绝赠尝：任何玩家都可以调用，但只有被赠尝者可以成功执行
+    rejectGift: ({ G, playerID }) => {
+      if (!G.pendingGift) return INVALID_MOVE;
+      
+      const pid = playerID || "0";
+      // 只有被赠尝的玩家可以响应
+      if (G.pendingGift.toPlayerId !== pid) return INVALID_MOVE;
+
+      const targetPlayer = G.players[pid];
+      const rejectCost = targetPlayer.hasJadeChalice ? 2 : 1;
+
+      if (targetPlayer.teaTokens < rejectCost) return INVALID_MOVE;
+
+      targetPlayer.teaTokens -= rejectCost;
+
+      const chaliceNote = targetPlayer.hasJadeChalice ? "（玉盏特权代价：2茶券）" : "";
+      G.notification = {
+        type: "info",
+        message: `玩家 ${pid} 拒绝了赠尝！消耗${rejectCost}茶券${chaliceNote}，「${G.pendingGift.snack.name}」被弃置`,
+        timestamp: Date.now(),
+      };
+
+      G.pendingGift = null;
     },
   },
 };

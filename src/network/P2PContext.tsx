@@ -11,6 +11,7 @@ interface P2PContextType {
   hostGame: () => void;
   joinGame: (roomId: string) => void;
   sendMove: (moveName: string, ...args: any[]) => void;
+  respondToGift: (response: "accept" | "reject") => void; // 专门处理赠尝响应
   playerId: string | null;
   error: string | null;
   availableRooms: Array<{ roomId: string; playerCount: number; maxPlayers: number }>;
@@ -93,15 +94,16 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setGameState(data.state);
             break;
           case "MOVE":
-            // Host processes moves
-            // Check if this client is host by checking if gameClientRef is initialized
+            // Host processes moves from guests
             if (gameClientRef.current) {
-              const movePlayerId = data.playerId || "1"; // Default to 1 if not sent (compat)
+              const movePlayerId = data.playerId || "1";
+              
+              // 切换到发送者的 playerID 来执行 move
               gameClientRef.current.updatePlayerID(movePlayerId);
               if (gameClientRef.current.moves[data.moveName]) {
                 gameClientRef.current.moves[data.moveName](...data.args);
               }
-              gameClientRef.current.updatePlayerID("0"); // Restore host ID? Actually host is usually 0.
+              gameClientRef.current.updatePlayerID("0"); // Restore host ID
             }
             break;
           case "PLAYER_JOINED":
@@ -172,7 +174,8 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
 
         // Initialize Boardgame.io Client (Master) with max players
-        const client = Client({ game: JadeNightGame, numPlayers: 5 });
+        // Host is always player 0
+        const client = Client({ game: JadeNightGame, numPlayers: 5, playerID: "0" });
         client.start();
         gameClientRef.current = client;
 
@@ -220,20 +223,38 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isHost) {
       // Execute locally
       if (gameClientRef.current) {
-        gameClientRef.current.moves[moveName](...args);
+        const state = gameClientRef.current.getState();
+        console.log(`[Host] Executing move: ${moveName}`, {
+          currentPlayer: state?.ctx?.currentPlayer,
+          activePlayers: state?.ctx?.activePlayers,
+          playerId: gameClientRef.current.playerID,
+        });
+        const result = gameClientRef.current.moves[moveName]?.(...args);
+        console.log(`[Host] Move result:`, result);
       }
     } else {
       // Send to host via WebSocket
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log(`[Guest] Sending move: ${moveName}`, { playerId, args });
         wsRef.current.send(
           JSON.stringify({
             type: "MOVE",
             moveName,
             args,
+            playerId, // Include player ID for host to process correctly
           }),
         );
       }
     }
+  };
+
+  // 专门处理赠尝响应的函数
+  // 现在使用 activePlayers: { all: Stage.NULL }，所有玩家都可以执行 moves
+  // 所以直接调用 sendMove 即可
+  const respondToGift = (response: "accept" | "reject") => {
+    const moveName = response === "accept" ? "acceptGift" : "rejectGift";
+    console.log(`[respondToGift] ${response}`, { playerId, isHost });
+    sendMove(moveName);
   };
 
   // Cleanup on unmount
@@ -258,6 +279,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hostGame,
         joinGame,
         sendMove,
+        respondToGift,
         playerId,
         error,
         availableRooms,
