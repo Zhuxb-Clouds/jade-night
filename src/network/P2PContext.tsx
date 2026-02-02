@@ -48,7 +48,7 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const hostname = window.location.hostname;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     // 如果是本地地址 port是9000，否则6558
-    const port = hostname === "localhost" || hostname === "127.0.0.1" ? 9000 : 6558;
+    const port = hostname === "localhost" || hostname === "127.0.0.1" || hostname.includes("192.168") ? 9000 : 6558;
 
     return `${protocol}//${hostname}:${port}`;
   };

@@ -110,30 +110,33 @@ export const getDecks = (): { snackDeck: Card[]; tablewareDeck: Card[] } => {
 // --- Score Logic ---
 
 // Calculate score for a single snack pairing
-// 规则：盘子上的每一个'圈'若被'点'填满，每个填满的圈产生1点配对分
-// 例如：双色盘[红+绿]配双色点心[红+绿]，颜色维度得2分
+// 新规则：
+// 基础分 = 匹配的维度数（0-3分）
+// 完美奖励 = 3个维度全匹配时 +1分
+// 最终配对分 = 基础分 + 完美奖励
+// 可能的分值：0, 1, 2, 4分（没有3分）
 export const calculateSinglePairingScore = (tableware: Card, snack: Card): number => {
   const p = tableware.attributes;
   const s = snack.attributes;
 
-  let score = 0;
+  let matchedDimensions = 0;
 
-  // Color Match: 每个被点心填满的颜色圈得1分
-  for (const c of p.colors) {
-    if (s.colors.includes(c)) score += 1;
-  }
+  // Color Match: 颜色维度是否匹配（只要有一个颜色匹配即算匹配）
+  const colorMatch = p.colors.some(c => s.colors.includes(c));
+  if (colorMatch) matchedDimensions += 1;
 
-  // Shape Match: 每个被点心填满的形状圈得1分
-  for (const sh of p.shapes) {
-    if (s.shapes.includes(sh)) score += 1;
-  }
+  // Shape Match: 形状维度是否匹配
+  const shapeMatch = p.shapes.some(sh => s.shapes.includes(sh));
+  if (shapeMatch) matchedDimensions += 1;
 
-  // Temp Match: 每个被点心填满的温度圈得1分
-  for (const t of p.temps) {
-    if (s.temps.includes(t)) score += 1;
-  }
+  // Temp Match: 材质维度是否匹配
+  const tempMatch = p.temps.some(t => s.temps.includes(t));
+  if (tempMatch) matchedDimensions += 1;
 
-  return score;
+  // 完美奖励：3个维度全匹配时 +1分
+  const perfectBonus = matchedDimensions === 3 ? 1 : 0;
+
+  return matchedDimensions + perfectBonus;
 };
 
 export const calculatePairingScore = (item: WaitingItem): number => {
@@ -146,14 +149,17 @@ export const calculatePairingScore = (item: WaitingItem): number => {
 
 export const calculateFinalScore = (player: PlayerState) => {
   // S = Sum(P_ind) + C_off + teaTokens - C_wait * 2
-  // 文档公式：个人区配对分 + 奉献区数量 + 剩余茶券 - 滞留惩罚
+  // 文档公式：个人区配对分 + 奉献区得分 + 剩余茶券 - 滞留惩罚
   // 如果有玉盏，则C_off*2
 
-  // 1. Personal Area Scores (pairing scores)
+  // 1. Personal Area Scores (pairing scores，含完美奖励)
   const sumP_ind = player.personalArea.reduce((sum, item) => sum + calculatePairingScore(item), 0);
 
-  // 2. Offering Area Count (只计数量，不计配对分)
-  let c_off = player.offeringArea.length;
+  // 2. Offering Area Score (按食器等级计分：L1=1, L2=2, L3=3)
+  let c_off = player.offeringArea.reduce((sum, item) => {
+    const level = item.tableware?.level || 1;
+    return sum + level;
+  }, 0);
   // 玉盏持有者奉献分翻倍
   if (player.hasJadeChalice) {
     c_off = c_off * 2;
@@ -675,12 +681,12 @@ export const JadeNightGame: Game<JadeNightState> = {
 
       let rewardMessage = "获得1枚茶券。";
 
-      // 文档规定：若奉献的点心配对分>=3点，则额外获得一枚茶券
-      if (pairingScore >= 3) {
+      // 文档规定：若奉献的点心配对分>=4点（完美配对），则额外获得一枚茶券
+      if (pairingScore >= 4) {
         player.teaTokens += 1;
-        rewardMessage += "配对分≥3，额外获得1枚茶券！";
+        rewardMessage += "完美配对，额外获得1枚茶券！";
 
-        // 流动的玉盏：高质量奉献(>=3分)立即夺取玉盏
+        // 流动的玉盏：完美奉献(4分)立即夺取玉盏
         if (!player.hasJadeChalice) {
           // 从其他玩家手中夺取玉盏
           for (const pid of Object.keys(G.players)) {
