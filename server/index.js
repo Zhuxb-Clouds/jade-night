@@ -90,7 +90,6 @@ class GameLogger {
           waitingCount: player.waitingArea?.length || 0,
           personalCount: player.personalArea?.length || 0,
           offeringCount: player.offeringArea?.length || 0,
-          teaTokens: player.teaTokens || 0,
           ap: player.actionPoints || 0,
         };
       }

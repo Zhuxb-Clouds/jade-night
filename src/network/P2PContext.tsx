@@ -11,7 +11,6 @@ interface P2PContextType {
   hostGame: () => void;
   joinGame: (roomId: string) => void;
   sendMove: (moveName: string, ...args: any[]) => void;
-  respondToGift: (response: "accept" | "reject") => void; // 专门处理赠尝响应
   playerId: string | null;
   error: string | null;
   availableRooms: Array<{ roomId: string; playerCount: number; maxPlayers: number }>;
@@ -248,15 +247,6 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // 专门处理赠尝响应的函数
-  // 现在使用 activePlayers: { all: Stage.NULL }，所有玩家都可以执行 moves
-  // 所以直接调用 sendMove 即可
-  const respondToGift = (response: "accept" | "reject") => {
-    const moveName = response === "accept" ? "acceptGift" : "rejectGift";
-    console.log(`[respondToGift] ${response}`, { playerId, isHost });
-    sendMove(moveName);
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -279,7 +269,6 @@ export const P2PProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hostGame,
         joinGame,
         sendMove,
-        respondToGift,
         playerId,
         error,
         availableRooms,
