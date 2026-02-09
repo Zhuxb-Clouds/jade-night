@@ -1109,7 +1109,7 @@ const GameRulesModal: React.FC<{ show: boolean; onClose: () => void }> = ({ show
                 <strong className="text-rose-400">E. 赠尝 (1 AP)</strong>
                 <p className="text-stone-400 mt-1">
                   将公共区点心放到任意玩家（包括自己）的空盘上（配对分≥1）。不可拒绝，直接放置。
-                  <br/>若目标持有【玉盏】，可弹回赠尝：点心返还给你，<span className="text-amber-300 font-bold">🏆玉盏转移给你</span>。
+                  <br/>若目标持有【玉盏】，可选择弹回：<span className="text-amber-300 font-bold">🏆玉盏转移给你</span>，但你必须接住点心。
                 </p>
               </div>
             </div>
@@ -1123,7 +1123,9 @@ const GameRulesModal: React.FC<{ show: boolean; onClose: () => void }> = ({ show
               <p className="mt-2"><strong>玉盏能力 - 弹回赠尝：</strong></p>
               <ul className="list-disc list-inside text-stone-300 ml-2">
                 <li>当他人对你赠尝时，可选择弹回</li>
-                <li>弹回后：点心返还给对方，对方必须放在自己的盘中</li>
+                <li>弹回后：点心返还给对方，对方<strong>选择任意盘子</strong>放置</li>
+                <li>若盘中已有点心，该点心会被<span className="text-rose-400">弃置</span></li>
+                <li><span className="text-rose-400">无盘惩罚</span>：若对方没有任何盘子，点心以<strong>-3分</strong>记入个人区</li>
                 <li>🏆玉盏转移给对方</li>
               </ul>
             </div>
